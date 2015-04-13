@@ -25,6 +25,7 @@
 *.backup
 
 # Other
+arduino
 win_*
 *_lsg.pdf
 *.asv
