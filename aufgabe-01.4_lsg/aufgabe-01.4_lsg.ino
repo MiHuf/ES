@@ -12,8 +12,9 @@ void setup() {
 }
 
 void loop() {
-  delay (50);
-  bright++ ;
+  if ((millis() % 50) == 0) {
+    bright++ ;
+  }
   analogWrite(led, bright);
   Serial.println(bright);
 }

@@ -26,7 +26,9 @@ void loop() {
 }
 
 void changeBrightness() {
-  delay(50);
+  if ((millis() % 50) != 0) {
+    return;
+  }
   if (poll) {
     // Controllingby polling
     if (!digitalRead(swli)) {
