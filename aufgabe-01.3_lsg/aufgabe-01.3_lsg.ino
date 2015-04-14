@@ -4,6 +4,7 @@
 int swli = 4;
 int swre = 9;
 int led = 7;
+boolean mode = false;
 
 void setup() {
   pinMode(swli, INPUT);
@@ -11,19 +12,20 @@ void setup() {
   pinMode(swre, INPUT);
   attachInterrupt(swre, doRe, FALLING);
   pinMode(led, OUTPUT);
-  switchLed(LOW);
+  switchLed();
 }
 
 void loop() {
+ switchLed();
 }
 
-void switchLed(boolean mode) {
+void switchLed() {
   digitalWrite(led, mode);
 }
 
 void doLi() {
-  switchLed(HIGH);
+ mode = !mode;
 }
 void doRe() {
-  switchLed(LOW);
+
 }
