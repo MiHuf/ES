@@ -12,7 +12,8 @@ void setup() {
 }
 
 void loop() {
-  if ((millis() % 50) == 0) {
+  if ((millis() % 10) == 0) {
+    // alle 10 ms
     bright++ ;
   }
   analogWrite(led, bright);

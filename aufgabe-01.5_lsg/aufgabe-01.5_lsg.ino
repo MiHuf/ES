@@ -4,8 +4,9 @@ int swli = 4;
 int swre = 9;
 int led = 7;
 byte bright = 0;
-boolean rise = true;   // increase brightness
-boolean poll = true;   // Fuer Aufgabe 1.5 a
+boolean rise = true;    // increase brightness
+// boolean poll = true;    // Fuer Aufgabe 1.5 a
+boolean poll = false;   // Fuer Aufgabe 1.5 b
 
 void setup() {
   pinMode(swli, INPUT);
@@ -26,7 +27,8 @@ void loop() {
 }
 
 void changeBrightness() {
-  if ((millis() % 50) != 0) {
+  if ((millis() % 10) != 0) {
+    // alle 10 ms
     return;
   }
   if (poll) {
