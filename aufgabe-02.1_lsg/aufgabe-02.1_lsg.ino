@@ -5,13 +5,7 @@
 
 
 // Timer Params
-uint32_t dwFreq = 1000;  // ???
-uint32_t dwMCk = 0;  // ???
-uint32_t dwBoardMCK = 84000000;  // ???
-uint32_t *dwDiv;
-uint32_t *dwTcClks;
-uint32_t mckDivisor;
-uint32_t dwMode = 0; // ???
+uint32_t dwMode = 49152; // TCLK1 (bits 0, 1, 2 ) = 0 , WAVSEL (bits 13, 14)  = 2 = UPRC, WAVE (bit 15) = 1 = ENABLED
 
 void setup() {
   pmc_set_writeprotect(false);
@@ -31,8 +25,8 @@ void setup() {
   TC_Configure(TC2, 0, dwMode);
   NVIC_ClearPendingIRQ(TC6_IRQn);
   NVIC_EnableIRQ(TC6_IRQn);
-  mckDivisor = TC_FindMckDivisor(dwFreq, dwMCk, dwDiv, dwTcClks, dwBoardMCK);
-  TC_SetRC(TC2, 0, mckDivisor);
+//   TC_FindMckDivisor(dwFreq, dwMCk, dwDiv, dwTcClks, dwBoardMCK);
+  TC_SetRC(TC2, 0, 41999);
 
   // >> Hier wird der konfigurierte Timer gestartet
   /**
