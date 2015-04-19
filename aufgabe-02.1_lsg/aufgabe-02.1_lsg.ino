@@ -1,12 +1,14 @@
-// Aufgabe 2.1, Stand von 2015-04-17
+// Aufgabe 2.1, Stand von 2015-04-19
 // Lösung von Michael Hufschmidt   michael@hufschmidt-web.de, 
 //            Tim Welge            tw@ens-fiti.de
 //            Rania Wittenberg     rania_wittenberg@hotmail.com
 
-
 // Timer Params
-uint32_t dwMode = 49152; // TCLK1 (bits 0, 1, 2 ) = 0 , WAVSEL (bits 13, 14)  = 2 = UPRC, WAVE (bit 15) = 1 = ENABLED
-
+// TCLK1 (bits 0, 1, 2 ) = 0 ,
+// WAVSEL (bits 13, 14)  = 2 = UPRC, 
+// WAVE (bit 15) = 1 = ENABLED
+uint32_t dwMode = 0b000 | 0b10 << 13 | 0b1 << 15;
+// uint32_t dwMode = 49152; 
 void setup() {
   pmc_set_writeprotect(false);
   pmc_enable_periph_clk(ID_TC6);

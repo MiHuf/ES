@@ -1,5 +1,7 @@
 // Aufgabe 2.3, Stand von 2015-04-14
-// Lösung von 
+// Lösung von Michael Hufschmidt   michael@hufschmidt-web.de, 
+//            Tim Welge            tw@ens-fiti.de
+//            Rania Wittenberg     rania_wittenberg@hotmail.com
 
 void setup() {
   pmc_set_writeprotect(false);
