@@ -26,9 +26,9 @@
 #include <stdint.h>
 
 int main(int argc, char **argv) {
-  uint32_t x = 49154;
-  uint32_t y = 0xC002;
-  uint32_t z = 0b010 | 0b10 << 13 | 0b1 << 15;
+  uint32_t x = 49152;
+  uint32_t y = 0xC000;
+  uint32_t z = 0b000 | 0b10 << 13 | 0b1 << 15;
   printf("x = %8d = %8x  \r\n", x, x);
   printf("y = %8d = %8x  \r\n", y, y);
   printf("z = %8d = %8x  \r\n", z, z);
