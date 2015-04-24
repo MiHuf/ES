@@ -16,13 +16,13 @@ const int led = 13;             // interne LED
 const uint32_t bounceTime = 32; // bounce time in milli-seconds
 boolean ledOn = true;
 
-struct Key {
+typedef struct {
   int pin;
   boolean validStatus;
   boolean actualStatus;
   uint32_t bouncing;
-};
-typedef Key *pKey;
+} Key;
+typedef Key * pKey;
 Key swli, swre;
 
 void setup() {
@@ -39,13 +39,6 @@ void setup() {
   // Other setup
   pinMode(led, OUTPUT);
 
-  // Warum kompiliert das nicht?
-  //void keyInit(pKey k, int p) {
-  //  k->pin = p;
-  //  k->validStatus = digitalRead(k->pin);
-  //  k->actualStatus = k->validStatus;
-  //  k->.bouncing = bounceTime;
-  //}
   swli.pin = 5;
   pinMode(swli.pin, INPUT);
   swli.validStatus = digitalRead(swli.pin);
@@ -55,6 +48,14 @@ void setup() {
   digitalWrite(led, ledOn);
   Serial.begin(9600);
 }
+
+// Warum kompiliert das nicht?
+//void keyInit(pKey k ; int p) {
+//  k->pin = p;
+//  k->validStatus = digitalRead(k->pin);
+//  k->actualStatus = k->validStatus;
+//  k->.bouncing = bounceTime;
+//}
 
 void loop() {
   // put your main code here, to run repeatedly:
@@ -70,9 +71,10 @@ void switchLed() {
 
 // Warum kompiliert das nicht?
 //boolean checkKey (pKey k) {
-//  // Code wie unten hier einfügen  
+//  // Code wie unten hier einfügen
 //  return false;
 //}
+
 boolean checkSwli () {
   swli.actualStatus = digitalRead(swli.pin);
   if (swli.actualStatus == swli.validStatus) {      // nothing happened, do nothing
@@ -90,6 +92,7 @@ boolean checkSwli () {
 }
 void doSwli() {
   // tu was
+  switchLed();
 }
 
 void TC6_Handler() {
@@ -100,7 +103,6 @@ void TC6_Handler() {
   if ((timerValue % 200) == 0) {  // alle 200 ms
     switchLed();
   }
-  if (checkSwli()) {
-    doSwli();
-  }
+  if (checkSwli()) doSwli();
+
 }
