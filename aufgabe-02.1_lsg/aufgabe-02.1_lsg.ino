@@ -39,7 +39,7 @@ void setup() {
   // Other setup
   pinMode(led, OUTPUT);
 
-  swli.pin = 5;
+  swli.pin = 4;
   pinMode(swli.pin, INPUT);
   swli.validStatus = digitalRead(swli.pin);
   swli.actualStatus = swli.validStatus;
@@ -92,7 +92,7 @@ boolean checkSwli () {
 }
 void doSwli() {
   // tu was
-  switchLed();
+  if (swli.validStatus == LOW) switchLed();
 }
 
 void TC6_Handler() {
@@ -101,8 +101,7 @@ void TC6_Handler() {
   timerValue = timerValue + 1;
   // tu was
   if ((timerValue % 200) == 0) {  // alle 200 ms
-    switchLed();
+    // switchLed();
   }
   if (checkSwli()) doSwli();
-
 }

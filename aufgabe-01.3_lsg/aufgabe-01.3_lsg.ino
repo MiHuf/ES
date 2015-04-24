@@ -3,7 +3,7 @@
 // Lösung von Rania, Tim, Michael
 int swli = 4;
 int swre = 9;
-int led = 7;
+int led = 13;
 boolean mode = false;
 
 void setup() {
