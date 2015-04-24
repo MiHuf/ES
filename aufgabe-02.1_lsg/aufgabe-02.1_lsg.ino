@@ -1,4 +1,4 @@
-// Aufgabe 2.1, Stand von 2015-04-23
+// Aufgabe 2.1, Stand von 2015-04-24
 // Lösung von Michael Hufschmidt   michael@hufschmidt-web.de,
 //            Tim Welge            tw@ens-fiti.de
 //            Rania Wittenberg     rania_wittenberg@hotmail.com
@@ -22,6 +22,7 @@ typedef struct {
   boolean actualStatus;
   uint32_t bouncing;
 } Key;
+
 typedef Key * pKey;
 Key swli, swre;
 
@@ -38,24 +39,20 @@ void setup() {
   TC_Start(TC2, dwChannel);
   // Other setup
   pinMode(led, OUTPUT);
-
-  swli.pin = 4;
-  pinMode(swli.pin, INPUT);
-  swli.validStatus = digitalRead(swli.pin);
-  swli.actualStatus = swli.validStatus;
-  swli.bouncing = bounceTime;
+  keyInit(&swli, 4);
 
   digitalWrite(led, ledOn);
   Serial.begin(9600);
 }
 
-// Warum kompiliert das nicht?
-//void keyInit(pKey k ; int p) {
-//  k->pin = p;
-//  k->validStatus = digitalRead(k->pin);
-//  k->actualStatus = k->validStatus;
-//  k->.bouncing = bounceTime;
-//}
+void keyInit(void * k, int p) {
+  Key *l = (Key *) k;
+  l->pin = p;
+  pinMode(l->pin, INPUT);
+  l->validStatus = digitalRead(l->pin);
+  l->actualStatus = l->validStatus;
+  l->bouncing = bounceTime;
+}
 
 void loop() {
   // put your main code here, to run repeatedly:
@@ -69,27 +66,25 @@ void switchLed() {
   digitalWrite(led, ledOn);
 }
 
-// Warum kompiliert das nicht?
-//boolean checkKey (pKey k) {
-//  // Code wie unten hier einfügen
-//  return false;
-//}
-
-boolean checkSwli () {
-  swli.actualStatus = digitalRead(swli.pin);
-  if (swli.actualStatus == swli.validStatus) {      // nothing happened, do nothing
+boolean checkKey (void * k) {
+  Key * l = (Key *) k;
+    l->actualStatus = digitalRead(l->pin);
+  if (l->actualStatus == l->validStatus) {      // nothing happened, do nothing
     return false;
   } else {                                          // key has been pressed
-    if (swli.bouncing == 0) {                       // bounce time exceeded?
-      swli.bouncing = bounceTime;                   // reset timer
-      swli.validStatus = swli.actualStatus;         // accept as valid
+    if (l->bouncing == 0) {                       // bounce time exceeded?
+      l->bouncing = bounceTime;                   // reset timer
+      l->validStatus = l->actualStatus;         // accept as valid
       return true;
     } else {
-      swli.bouncing --;                             // decrement and check again later
+      l->bouncing --;                             // decrement and check again later
       return false;
     };
   };
+  // Code wie unten hier einfügen
+  return false;
 }
+
 void doSwli() {
   // tu was
   if (swli.validStatus == LOW) switchLed();
@@ -103,5 +98,5 @@ void TC6_Handler() {
   if ((timerValue % 200) == 0) {  // alle 200 ms
     // switchLed();
   }
-  if (checkSwli()) doSwli();
+  if (checkKey(&swli)) doSwli();
 }

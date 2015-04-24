@@ -1,20 +1,131 @@
-// Aufgabe 2.2, Stand von 2015-04-14
-// Lösung von Michael Hufschmidt   michael@hufschmidt-web.de, 
+// Aufgabe 2.2, Stand von 2015-04-24
+// Lösung von Michael Hufschmidt   michael@hufschmidt-web.de,
 //            Tim Welge            tw@ens-fiti.de
 //            Rania Wittenberg     rania_wittenberg@hotmail.com
 
+// Timer Params and Variables
+const uint32_t dwChannel = 0;
+// TCLK1 (bits 0, 1, 2 ) = 0 ,
+// WAVSEL (bits 13, 14)  = 2 = UPRC,
+// WAVE (bit 15) = 1 = ENABLED
+const uint32_t dwMode = 0b000 | 0b10 << 13 | 0b1 << 15;  // = 49152 = C000
+uint32_t timerValue = 0;                                 // Millisekunden
+
+// Other Params and Variables
+typedef struct {
+  int pin;
+  boolean validStatus;
+  boolean actualStatus;
+  uint32_t bouncing;
+} Key;
+typedef Key * pKey;
+Key swli, swre;
+
+const int led = 13;             // interne LED
+const uint32_t bounceTime = 32; // bounce time in milli-seconds
+boolean ledOn = true;
+byte speed = 0;
+bool plus;     // beschleunigt
+int in1Pin = 5;    // Motor
+int in2Pin = 4;    // Motor
+
 void setup() {
+  // Timer setup and start
   pmc_set_writeprotect(false);
-  // pmc_enable_periph_clk( >> PMC id des Timers << );
-  // >> Hier erfolgt die Konfiguration des Timers
-  TC_Configure(TC0, 0, 0);
-  // NVIC_ClearPendingIRQ( >> NVIC irq des Timers << );
-  // NVIC_EnableIRQ( >> NVIC irq des Timers << );
-  // >> Hier wird der konfigurierte Timer gestartet
-  // put your setup code here, to run once:
+  pmc_enable_periph_clk(ID_TC6);                   // Timer 2, channel 0
+  TC_Configure(TC2, dwChannel, dwMode);
+  TC2->TC_CHANNEL[dwChannel].TC_IER = 0b1 << 4;    // siehe Datenblatt Seite 917
+  TC2->TC_CHANNEL[dwChannel].TC_IDR = ~(0b1 << 4); // siehe Datenblatt Seite 918
+  NVIC_ClearPendingIRQ(TC6_IRQn);                  // Timer 2, channel 0
+  NVIC_EnableIRQ(TC6_IRQn);                        // Timer 2, channel 0
+  TC_SetRC(TC2, dwChannel, 41999);                 // (84 MHz / 2 - 1 Hz) set to 1 kHz
+  TC_Start(TC2, dwChannel);
+  // Other setup
+  pinMode(led, OUTPUT);
+
+  pinMode(swli.pin, INPUT);
+  pinMode(in1Pin, OUTPUT);
+  pinMode(in2Pin, OUTPUT);
+  swli.pin = 7;  // für den Taster
+  swli.validStatus = digitalRead(swli.pin);
+  swli.actualStatus = swli.validStatus;
+  swli.bouncing = bounceTime;
+
+  digitalWrite(led, ledOn);
+  Serial.begin(9600);
+}
+
+// Warum kompiliert das nicht?
+//void keyInit(Key* k, int p) {
+//  k->pin = p;
+//  k->validStatus = digitalRead(k->pin);
+//  k->actualStatus = k->validStatus;
+//  k->.bouncing = bounceTime;
+//}
+
+void accelerate() {
+  if (plus) {
+    speed++ ;
+  } else {
+    speed--;
+  }
 }
 
 void loop() {
   // put your main code here, to run repeatedly:
+  if (Serial.available()) {
+    char ch = Serial.read();
+    if (ch == '+') {
+      digitalWrite(in1Pin, HIGH);
+      digitalWrite(in2Pin, LOW);
+    }
+    if (ch == '-') {
+      digitalWrite(in1Pin, LOW);
+      digitalWrite(in2Pin, HIGH);
+    }
 
+  }
 }
+
+void switchLed() {
+  ledOn = not(ledOn);
+  digitalWrite(led, ledOn);
+}
+
+// Warum kompiliert das nicht?
+//boolean checkKey (pKey k) {
+//  // Code wie unten hier einfügen
+//  return false;
+//}
+
+boolean checkSwli () {
+  swli.actualStatus = digitalRead(swli.pin);
+  if (swli.actualStatus == swli.validStatus) {      // nothing happened, do nothing
+    return false;
+  } else {                                          // key has been pressed
+    if (swli.bouncing == 0) {                       // bounce time exceeded?
+      swli.bouncing = bounceTime;                   // reset timer
+      swli.validStatus = swli.actualStatus;         // accept as valid
+      return true;
+    } else {
+      swli.bouncing --;                             // decrement and check again later
+      return false;
+    };
+  };
+}
+void doSwli() {
+  // tu was
+  if (swli.validStatus == LOW) switchLed();
+}
+
+void TC6_Handler() {
+  uint32_t stat;
+  stat = TC_GetStatus(TC2, dwChannel);
+  timerValue = timerValue + 1;
+  // tu was
+  if ((timerValue % 200) == 0) {  // alle 200 ms
+    // switchLed();
+  }
+  if (checkSwli()) doSwli();
+}
+
