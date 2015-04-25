@@ -1,4 +1,4 @@
-// Aufgabe 2.1, Stand von 2015-04-24
+// Aufgabe 2.1, Stand von 2015-04-25
 // Lösung von Michael Hufschmidt   michael@hufschmidt-web.de,
 //            Tim Welge            tw@ens-fiti.de
 //            Rania Wittenberg     rania_wittenberg@hotmail.com
@@ -15,6 +15,8 @@ uint32_t timerValue = 0;                                 // Millisekunden
 const int led = 13;             // interne LED
 const uint32_t bounceTime = 32; // bounce time in milli-seconds
 boolean ledOn = true;
+
+// #include "key_handler.c"
 
 typedef struct {
   int pin;
@@ -37,21 +39,21 @@ void setup() {
   NVIC_EnableIRQ(TC6_IRQn);                        // Timer 2, channel 0
   TC_SetRC(TC2, dwChannel, 41999);                 // (84 MHz / 2 - 1 Hz) set to 1 kHz
   TC_Start(TC2, dwChannel);
+
   // Other setup
   pinMode(led, OUTPUT);
   keyInit(&swli, 4);
-
   digitalWrite(led, ledOn);
   Serial.begin(9600);
 }
 
-void keyInit(void * k, int p) {
-  Key *l = (Key *) k;
-  l->pin = p;
-  pinMode(l->pin, INPUT);
-  l->validStatus = digitalRead(l->pin);
-  l->actualStatus = l->validStatus;
-  l->bouncing = bounceTime;
+void keyInit(void * p, int pin) {
+  pKey pk = (pKey) p;
+  pk->pin = pin;
+  pinMode(pk->pin, INPUT);
+  pk->validStatus = digitalRead(pk->pin);
+  pk->actualStatus = pk->validStatus;
+  pk->bouncing = bounceTime;
 }
 
 void loop() {
@@ -66,22 +68,21 @@ void switchLed() {
   digitalWrite(led, ledOn);
 }
 
-boolean checkKey (void * k) {
-  Key * l = (Key *) k;
-    l->actualStatus = digitalRead(l->pin);
-  if (l->actualStatus == l->validStatus) {      // nothing happened, do nothing
+boolean checkKey (void * p) {
+  pKey pk = (pKey) p;
+    pk->actualStatus = digitalRead(pk->pin);
+  if (pk->actualStatus == pk->validStatus) {      // nothing happened, do nothing
     return false;
-  } else {                                          // key has been pressed
-    if (l->bouncing == 0) {                       // bounce time exceeded?
-      l->bouncing = bounceTime;                   // reset timer
-      l->validStatus = l->actualStatus;         // accept as valid
+  } else {                                        // key has been pressed
+    if (pk->bouncing == 0) {                      // bounce time exceeded?
+      pk->bouncing = bounceTime;                  // reset timer
+      pk->validStatus = pk->actualStatus;         // accept as valid
       return true;
     } else {
-      l->bouncing --;                             // decrement and check again later
+      pk->bouncing --;                            // decrement and check again later
       return false;
     };
   };
-  // Code wie unten hier einfügen
   return false;
 }
 
@@ -100,3 +101,4 @@ void TC6_Handler() {
   }
   if (checkKey(&swli)) doSwli();
 }
+
