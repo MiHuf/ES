@@ -29,6 +29,7 @@ arduino
 win_*
 *_lsg.pdf
 *.asv
+*.gch
 
 # Fuer lokale Dateien
 *_.m
