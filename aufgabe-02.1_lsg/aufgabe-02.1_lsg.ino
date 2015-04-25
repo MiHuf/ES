@@ -14,14 +14,14 @@ uint32_t timerValue = 0;                                 // Millisekunden
 // Other Params and Variables
 const int led = 13;             // interne LED
 const uint32_t bounceTime = 32; // bounce time in milli-seconds
-boolean ledOn = true;
+bool ledOn = true;
 
 // #include "key_handler.c"
 
 typedef struct {
   int pin;
-  boolean validStatus;
-  boolean actualStatus;
+  bool validStatus;
+  bool actualStatus;
   uint32_t bouncing;
 } Key;
 
