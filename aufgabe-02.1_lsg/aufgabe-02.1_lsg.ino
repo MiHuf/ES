@@ -16,8 +16,6 @@ const int led = 13;             // interne LED
 const uint32_t bounceTime = 32; // bounce time in milli-seconds
 bool ledOn = true;
 
-// #include "key_handler.c"
-
 typedef struct {
   int pin;
   bool validStatus;
@@ -68,7 +66,7 @@ void switchLed() {
   digitalWrite(led, ledOn);
 }
 
-boolean checkKey (void * p) {
+bool checkKey (void * p) {
   pKey pk = (pKey) p;
     pk->actualStatus = digitalRead(pk->pin);
   if (pk->actualStatus == pk->validStatus) {      // nothing happened, do nothing
