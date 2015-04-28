@@ -19,8 +19,9 @@ const int motIN2 = 3;    // Motor
 const int led = 13;             // interne LED
 const uint32_t bounceTime = 32; // bounce time in milli-seconds
 boolean ledOn = true;
-byte speed = 128;
+int speed = 128;
 bool plus;     // beschleunigt
+bool cw;       // Clockwise
 
 void setup() {
   // Timer setup and start
@@ -45,14 +46,33 @@ void setup() {
   Serial.begin(9600);
 }
 
-void accelerate() {
-  if (plus) {
-    speed++ ;
+void toggleDirection() {
+  if (cw) {
+    digitalWrite(motIN1, LOW);
+    digitalWrite(motIN2, HIGH);
   } else {
-    speed--;
+    digitalWrite(motIN1, HIGH);
+    digitalWrite(motIN2, LOW);
   }
+  // Serial.println( cw);  // geht nicht
+  cw = !cw;
 }
 
+void controlMotor() {
+  if (plus) {
+    if (speed < 255) speed++ ;
+  } else {
+    if (speed > 0) speed--;
+  }
+  if (speed >= 255) {
+    toggleDirection();
+  }
+  if (speed <= 0) {
+    toggleDirection();
+  }
+  // Serial.println(speed);  // geht nicht
+  analogWrite(motPWM, speed);
+}
 void loop() {
   // put your main code here, to run repeatedly:
 }
@@ -67,8 +87,13 @@ void TC6_Handler() {
   stat = TC_GetStatus(TC2, dwChannel);
   timerValue = timerValue + 1;
   // tu was
-  if ((timerValue % 200) == 0) {  // alle 200 ms
-    // switchLed();
+  if (plus) {
+    if ((timerValue % 20) == 0) {  // 5 Sekunden von 0 bis 255
+      controlMotor();
+    }
+    if ((timerValue % 2) == 0) {   // 0,5 Sekunden von 255 bis 0
+      controlMotor();
+    }
   }
 }
 
