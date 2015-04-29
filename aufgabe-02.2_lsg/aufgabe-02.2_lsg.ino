@@ -19,9 +19,10 @@ const int motIN2 = 3;    // Motor
 const int led = 13;             // interne LED
 const uint32_t bounceTime = 32; // bounce time in milli-seconds
 boolean ledOn = true;
-int speed = 128;
-bool plus;     // beschleunigt
-bool cw;       // Clockwise
+int mode = -1;       // 0 = stop, 1 = cw, 2 = stop , 3 = ccw
+bool cw = true;
+int speed = 1;
+bool accelerate = false;     // langsam
 
 void setup() {
   // Timer setup and start
@@ -34,6 +35,9 @@ void setup() {
   NVIC_EnableIRQ(TC6_IRQn);                        // Timer 2, channel 0
   TC_SetRC(TC2, dwChannel, 41999);                 // (84 MHz / 2 - 1 Hz) set to 1 kHz
   TC_Start(TC2, dwChannel);
+
+  nextMode();
+
   // Other setup
   pinMode(led, OUTPUT);
   pinMode(motPWM, OUTPUT);
@@ -46,33 +50,59 @@ void setup() {
   Serial.begin(9600);
 }
 
-void toggleDirection() {
-  if (cw) {
-    digitalWrite(motIN1, LOW);
-    digitalWrite(motIN2, HIGH);
-  } else {
-    digitalWrite(motIN1, HIGH);
-    digitalWrite(motIN2, LOW);
+void nextMode() {
+//   digitalWrite(motIN1, LOW);
+//   digitalWrite(motIN2, LOW);
+  Serial.println(mode % 4);
+  switch (mode % 4) {
+    case 0:
+      setCw();
+      accelerate = true;
+      break;
+    case 1:
+      setCw();
+      accelerate = false;
+      break;
+    case 2:
+      setCcw();
+      accelerate = true;
+      break;
+    case 3:
+      setCcw();
+      accelerate = false;
+      break;
   }
-  // Serial.println( cw);  // geht nicht
-  cw = !cw;
+
+
+  mode++;
+}
+
+void setCw() {
+  digitalWrite(led, HIGH);
+  digitalWrite(motIN1, LOW);  // set CW
+  digitalWrite(motIN2, HIGH);
+}
+void setCcw() {
+  digitalWrite(led, LOW);
+  digitalWrite(motIN1, HIGH);   // set CCW
+  digitalWrite(motIN2, LOW);
 }
 
 void controlMotor() {
-  if (plus) {
-    if (speed < 255) speed++ ;
+  int s;
+  if (accelerate) {
+    speed++;
   } else {
-    if (speed > 0) speed--;
+    speed--;
   }
-  if (speed >= 255) {
-    toggleDirection();
+  s = constrain(speed, 0, 255);
+  analogWrite(motPWM, s);
+
+  if (speed % 256 == 0) {
+    nextMode();
   }
-  if (speed <= 0) {
-    toggleDirection();
-  }
-  // Serial.println(speed);  // geht nicht
-  analogWrite(motPWM, speed);
 }
+
 void loop() {
   // put your main code here, to run repeatedly:
 }
@@ -87,10 +117,11 @@ void TC6_Handler() {
   stat = TC_GetStatus(TC2, dwChannel);
   timerValue = timerValue + 1;
   // tu was
-  if (plus) {
-    if ((timerValue % 20) == 0) {  // 5 Sekunden von 0 bis 255
+  if (accelerate) {
+    if ((timerValue % 25) == 0) {  // 5 Sekunden von 0 bis 255
       controlMotor();
     }
+  } else {
     if ((timerValue % 2) == 0) {   // 0,5 Sekunden von 255 bis 0
       controlMotor();
     }
