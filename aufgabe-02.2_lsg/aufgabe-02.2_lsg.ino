@@ -1,4 +1,4 @@
-// Aufgabe 2.2, Stand von 2015-04-28
+// Aufgabe 2.2, Stand von 2015-04-29
 // Lösung von Michael Hufschmidt   michael@hufschmidt-web.de,
 //            Tim Welge            tw@ens-fiti.de
 //            Rania Wittenberg     rania_wittenberg@hotmail.com
@@ -13,16 +13,15 @@ uint32_t timerValue = 0;                                 // Millisekunden
 
 // Other Params and Variables
 
-const int motPWM = 2;
-const int motIN1 = 4;    // Motor
-const int motIN2 = 3;    // Motor
+const int motPWM = 2;           // Motor PWM
+const int motIN1 = 4;           // Motor 1
+const int motIN2 = 3;           // Motor 2
 const int led = 13;             // interne LED
-const uint32_t bounceTime = 32; // bounce time in milli-seconds
 boolean ledOn = true;
-int mode = -1;       // 0 = stop, 1 = cw, 2 = stop , 3 = ccw
+int mode = -1;                  // 0 = stop, 1 = cw, 2 = stop , 3 = ccw
 bool cw = true;
 int speed = 1;
-bool accelerate = false;     // langsam
+bool accelerate = false;        // langsam
 
 void setup() {
   // Timer setup and start
@@ -51,8 +50,6 @@ void setup() {
 }
 
 void nextMode() {
-//   digitalWrite(motIN1, LOW);
-//   digitalWrite(motIN2, LOW);
   Serial.println(mode % 4);
   switch (mode % 4) {
     case 0:
@@ -72,8 +69,6 @@ void nextMode() {
       accelerate = false;
       break;
   }
-
-
   mode++;
 }
 
@@ -87,7 +82,6 @@ void setCcw() {
   digitalWrite(motIN1, HIGH);   // set CCW
   digitalWrite(motIN2, LOW);
 }
-
 void controlMotor() {
   int s;
   if (accelerate) {
@@ -102,14 +96,13 @@ void controlMotor() {
     nextMode();
   }
 }
-
-void loop() {
-  // put your main code here, to run repeatedly:
-}
-
 void switchLed() {
   ledOn = not(ledOn);
   digitalWrite(led, ledOn);
+}
+
+void loop() {
+  // put your main code here, to run repeatedly:
 }
 
 void TC6_Handler() {
