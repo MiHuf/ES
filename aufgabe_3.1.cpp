@@ -49,9 +49,9 @@ void loop()
 }
 
 
-double gyroRotationRate(double volltage, double zero, double sensitiv){
+double gyroRotationRate(double voltage, double zero, double sensitiv){
 
-    // Gyro rotation rate=(Gyro Output Voltage – Gyro Zero-Rate Out) / Sensitivity
-    return (volltage-zero)/sensitiv;
+    // Gyro rotation rate=(Gyro Output Voltage - Gyro Zero-Rate Out) / Sensitivity
+    return (voltage-zero)/sensitiv;
 
 }
