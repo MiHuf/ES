@@ -14,7 +14,7 @@
  * 3. In an Interrupt-Routine (e.g. TC6_Handler() ) check for key action:
  *     if (pb1.checkKey()) doPb1();
  * 4. create a function void doPb1() for acting:
- *     if (validLow())  ...
+ *     if (pb1.validLow())  ...
  */
 
 #ifndef KEY_HANDLER_CPP
