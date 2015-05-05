@@ -6,15 +6,15 @@
  *
  * Usage:
  * ------
- * 1. Declare variables for each pushbotton:
- *     Key pb1. pb2, ...
+ * 1. Declare objects for each pushbotton:
+ *     KeyHandler pb1, pb2, ...
  * 2. Initialise each key within the setup() method and assign a pin:
- *     keyInit(&pb1, 4);
- *     keyInit(&pb2, 5);
+ *     pb1.keyInit(4);
+ *     pb2.keyInit(5);
  * 3. In an Interrupt-Routine (e.g. TC6_Handler() ) check for key action:
- *     if (checkKey(&Pb1)) doPb1();
+ *     if (pb1.checkKey()) doPb1();
  * 4. create a function void doPb1() for acting:
- *     if  if (pb1.validStatus == LOW)  ...
+ *     if (validLow())  ...
  */
 
 #ifndef KEY_HANDLER_CPP
@@ -33,10 +33,10 @@ void KeyHandler::keyInit(int thePin) {
 }
 
 bool KeyHandler::checkKey () {
-// Check if key has been operated and bounce time exceeded. Parameters:
-// p = pointer variable of type Key (e.g. &pb1 )
-// if return-values is true, you can check whether pb1 is pushed or
-// released by evaluating pb.validStatus which is either LOW or HIGH.
+  // Check if key has been operated and bounce time exceeded. Parameters:
+  // p = pointer variable of type Key (e.g. &pb1 )
+  // if return-values is true, you can check whether pb1 is pushed or
+  // released by evaluating pb.validStatus which is either LOW or HIGH.
   actualStatus = digitalRead(pin);
   if (actualStatus == validStatus) {      // nothing happened, do nothing
     return false;
@@ -58,12 +58,12 @@ bool KeyHandler::getValidStatus() {
   return validStatus;
 }
 bool KeyHandler::validLow() {
-  // returns true is validStatus which is LOW 
-  return getValidStatus()== LOW; 
+  // returns true is validStatus which is LOW
+  return getValidStatus() == LOW;
 }
 bool KeyHandler::validHigh() {
   // returns true is validStatus which is HIGH
-  return getValidStatus()== HIGH; 
+  return getValidStatus() == HIGH;
 }
 
 #endif // KEY_HANDLER_CPP
