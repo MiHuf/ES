@@ -15,7 +15,7 @@ const double x2Sens = 9.1;  // Sensitivity x4.5Out
 const double z2Sens = 9.1;  // Sensitivity z4.5Out
 int x1Rate, z1Rate;         // x-Out, z-Out
 int x2Rate, z2Rate;         // x4.5Out , z4.5Out
-int zeit = 3000;            // Delay 1 s
+int zeit = 100;            // Delay 1 s
 int Vref;
 
 
