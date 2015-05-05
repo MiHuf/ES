@@ -1,7 +1,9 @@
-// Aufgabe 2.1, Stand von 2015-04-25
+// Aufgabe 2.1, Stand von 2015-05-05
 // Lösung von Michael Hufschmidt   michael@hufschmidt-web.de,
 //            Tim Welge            tw@ens-fiti.de
 //            Rania Wittenberg     rania_wittenberg@hotmail.com
+// Thanks to Norman Hendrich for debugging
+#include "KeyHandler.h"
 
 // Timer Params and Variables
 const uint32_t dwChannel = 0;
@@ -12,19 +14,10 @@ const uint32_t dwMode = 0b000 | 0b10 << 13 | 0b1 << 15;  // = 49152 = C000
 uint32_t timerValue = 0;                                 // Millisekunden
 
 // Other Params and Variables
+const int swliPin = 4;          // one key   
 const int led = 13;             // interne LED
-const uint32_t bounceTime = 32; // bounce time in milli-seconds
+KeyHandler swli;                // only one key 
 bool ledOn = true;
-
-typedef struct {
-  int pin;
-  bool validStatus;
-  bool actualStatus;
-  uint32_t bouncing;
-} Key;
-
-typedef Key * pKey;
-Key swli, swre;
 
 void setup() {
   // Timer setup and start
@@ -40,18 +33,9 @@ void setup() {
 
   // Other setup
   pinMode(led, OUTPUT);
-  keyInit(&swli, 4);
+  swli.keyInit(swliPin);
   digitalWrite(led, ledOn);
   Serial.begin(9600);
-}
-
-void keyInit(void * p, int pin) {
-  pKey pk = (pKey) p;
-  pk->pin = pin;
-  pinMode(pk->pin, INPUT);
-  pk->validStatus = digitalRead(pk->pin);
-  pk->actualStatus = pk->validStatus;
-  pk->bouncing = bounceTime;
 }
 
 void loop() {
@@ -66,27 +50,9 @@ void switchLed() {
   digitalWrite(led, ledOn);
 }
 
-bool checkKey (void * p) {
-  pKey pk = (pKey) p;
-    pk->actualStatus = digitalRead(pk->pin);
-  if (pk->actualStatus == pk->validStatus) {      // nothing happened, do nothing
-    return false;
-  } else {                                        // key has been pressed
-    if (pk->bouncing == 0) {                      // bounce time exceeded?
-      pk->bouncing = bounceTime;                  // reset timer
-      pk->validStatus = pk->actualStatus;         // accept as valid
-      return true;
-    } else {
-      pk->bouncing --;                            // decrement and check again later
-      return false;
-    };
-  };
-  return false;
-}
-
 void doSwli() {
   // tu was
-  if (swli.validStatus == LOW) switchLed();
+  if (swli.validLow()) switchLed();
 }
 
 void TC6_Handler() {
@@ -97,6 +63,6 @@ void TC6_Handler() {
   if ((timerValue % 200) == 0) {  // alle 200 ms
     // switchLed();
   }
-  if (checkKey(&swli)) doSwli();
+  if (swli.checkKey()) doSwli();
 }
 

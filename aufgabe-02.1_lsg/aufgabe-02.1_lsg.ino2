@@ -1,8 +1,9 @@
-// Aufgabe 2.1, Stand von 2015-04-25
+// Aufgabe 2.1, Stand von 2015-05-05
 // Lösung von Michael Hufschmidt   michael@hufschmidt-web.de,
 //            Tim Welge            tw@ens-fiti.de
 //            Rania Wittenberg     rania_wittenberg@hotmail.com
-#include <key_handler.h>
+// Thanks to Norman Hendrich for debugging
+#include "KeyHandler.h"
 
 // Timer Params and Variables
 const uint32_t dwChannel = 0;
@@ -13,10 +14,10 @@ const uint32_t dwMode = 0b000 | 0b10 << 13 | 0b1 << 15;  // = 49152 = C000
 uint32_t timerValue = 0;                                 // Millisekunden
 
 // Other Params and Variables
+const int swliPin = 4;          // one key   
 const int led = 13;             // interne LED
+KeyHandler swli;                // only one key 
 bool ledOn = true;
-
-Key swli, swre;
 
 void setup() {
   // Timer setup and start
@@ -32,7 +33,7 @@ void setup() {
 
   // Other setup
   pinMode(led, OUTPUT);
-  keyInit(&swli, 4);
+  swli.keyInit(swliPin);
   digitalWrite(led, ledOn);
   Serial.begin(9600);
 }
@@ -51,7 +52,7 @@ void switchLed() {
 
 void doSwli() {
   // tu was
-  if (swli.validStatus == LOW) switchLed();
+  if (swli.validLow()) switchLed();
 }
 
 void TC6_Handler() {
@@ -62,6 +63,6 @@ void TC6_Handler() {
   if ((timerValue % 200) == 0) {  // alle 200 ms
     // switchLed();
   }
-  if (checkKey(&swli)) doSwli();
+  if (swli.checkKey()) doSwli();
 }
 
