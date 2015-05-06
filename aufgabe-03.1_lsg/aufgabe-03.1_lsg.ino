@@ -1,22 +1,22 @@
-// Aufgabe 3.1, Stand von 2015-05-05
+// Aufgabe 3.1, Stand von 2015-05-06
 // Lösung von Michael Hufschmidt   michael@hufschmidt-web.de,
 //            Tim Welge            tw@ens-fiti.de
 //            Rania Wittenberg     rania_wittenberg@hotmail.com
 
-const int pinX1 = 2;
-const int pinZ1 = 3;
-const int pinX2 = 4;
-const int pinZ2 = 5;
-const int pinRef = 6;
-const int pinAZ = 7;        // muss noch implementiert werden!!!
+const int pinX1 = A2;
+const int pinZ1 = A3;
+const int pinX2 = A4;
+const int pinZ2 = A5;
+const int pinRef = A6;
+const int pinAZ = 7;        // Digital I/O
 
 const double x1Sens = 2.0;  // Sensitivity x-Out
 const double z1Sens = 2.0;  // Sensitivity z-Out
-const double x2Sens = 9.1;  // Sensitivity x4.5Out
-const double z2Sens = 9.1;  // Sensitivity z4.5Out
+const double x2Sens = 9.1;  // Sensitivity x4.5-Out
+const double z2Sens = 9.1;  // Sensitivity z4.5-Out
 int x1Rate, z1Rate;         // x-Out, z-Out
-int x2Rate, z2Rate;         // x4.5Out , z4.5Out
-int zeit = 100;            // Delay 100 ms
+int x2Rate, z2Rate;         // x4.5-Out , z4.5-Out
+int zeit = 100;             // Delay 100 ms
 int Vref;
 
 void setup() {
@@ -25,7 +25,11 @@ void setup() {
   pinMode(pinZ1, INPUT);
   pinMode(pinX2, INPUT);
   pinMode(pinZ2, INPUT);
+  pinMode(pinRef, INPUT);
   pinMode(pinAZ, OUTPUT);
+  digitalWrite(pinAZ, LOW);
+  delay(1000);
+  digitalWrite(pinAZ, HIGH);
   Serial.begin(9600);
 }
 
