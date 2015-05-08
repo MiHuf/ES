@@ -3,11 +3,11 @@
 //            Tim Welge            tw@ens-fiti.de
 //            Rania Wittenberg     rania_wittenberg@hotmail.com
 
-const int pinX1 = A2;       // Analog Gyro
-const int pinZ1 = A3;       // Analog Gyro
-const int pinX2 = A4;       // Analog Gyro
-const int pinZ2 = A5;       // Analog Gyro
-const int pinRef = A6;      // Analog Gyro
+const int pinX1 = A2;       // Analog Gyro XOUT
+const int pinZ1 = A3;       // Analog Gyro ZOUT
+const int pinX2 = A4;       // Analog Gyro X4.5OUT
+const int pinZ2 = A5;       // Analog Gyro Z4.5OUT
+const int pinRef = A6;      // Analog Gyro VREF
 const int pinAZ = 7;        // Digital I/O Gyro
 
 const double x1Sens = 2.0;  // Sensitivity x-Out
@@ -41,10 +41,12 @@ void loop() {
   z2Rate = analogRead(pinZ2);      // Liest Analog input z4.5-Out
   Vref = analogRead(pinRef);       // Liest Analog input Ref
 
-  Serial.print("Rohdaten x1 ,z1: ");
+  Serial.print("Rohdaten x1 ,z1, VRef: ");
   Serial.print(x1Rate, DEC);    // Ausgabe Rotation  in Achse  X
   Serial.print(", ");           // leertaste
   Serial.print(z1Rate, DEC);    // Ausgabe Rotation  in Achse  Z
+  Serial.print(", ");           // leertaste
+  Serial.print(Vref, DEC);      // Ausgabe Rotation  in Achse  Z
   Serial.print("\nWinkelgeschindigkeit x1, z1: ");
   Serial.print(winkelgeschwindigkeit(x1Rate, Vref, x1Sens), DEC);
   Serial.print(", ");

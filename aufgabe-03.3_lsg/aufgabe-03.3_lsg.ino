@@ -6,11 +6,11 @@
 #include <Servo.h>
 
 // for Gyro
-const int pinX1 = A2;           // Analog Gyro
-const int pinZ1 = A3;           // Analog Gyro
-const int pinX2 = A4;           // Analog Gyro
-const int pinZ2 = A5;           // Analog Gyro
-const int pinRef = A6;          // Analog Gyro
+const int pinX1 = A2;           // Analog Gyro XOUT
+const int pinZ1 = A3;           // Analog Gyro ZOUT
+const int pinX2 = A4;           // Analog Gyro X4.5OUT
+const int pinZ2 = A5;           // Analog Gyro Z4.5OUT
+const int pinRef = A6;          // Analog Gyro VREF
 const int pinAZ = 7;            // Digital I/O Gyro
 const double x1Sens = 2.0;      // Sensitivity x-Out
 const double z1Sens = 2.0;      // Sensitivity z-Out
@@ -18,9 +18,9 @@ const double x2Sens = 9.1;      // Sensitivity x4.5-Out
 const double z2Sens = 9.1;      // Sensitivity z4.5-Out
 // for Servo
 const int servoPin = 3;         // Servo-Pin
-const int wmin = 28;            // Servo-Grenzwert, ermittelt
-const int wmax = 160;           // Servo-Grenzwert, ermittelt
-const double schwelle = 2.0;    // Schwellwert fuer Servo-Ausgabe
+const int wmin = 24;            // Servo-Grenzwert, ermittelt
+const int wmax = 159;           // Servo-Grenzwert, ermittelt
+const double schwelle = 5.0;    // Schwellwert fuer Servo-Ausgabe
 int welchesGyro = pinX1;        // evtl. anpassen
 // for LED
 const int led = 13;             // Internal LED
