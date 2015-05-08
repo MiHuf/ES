@@ -1,14 +1,14 @@
-// Aufgabe 3.1, Stand von 2015-05-06
+// Aufgabe 3.1, Stand von 2015-05-08
 // Lösung von Michael Hufschmidt   michael@hufschmidt-web.de,
 //            Tim Welge            tw@ens-fiti.de
 //            Rania Wittenberg     rania_wittenberg@hotmail.com
 
-const int pinX1 = A2;
-const int pinZ1 = A3;
-const int pinX2 = A4;
-const int pinZ2 = A5;
-const int pinRef = A6;
-const int pinAZ = 7;        // Digital I/O
+const int pinX1 = A2;       // Analog Gyro
+const int pinZ1 = A3;       // Analog Gyro
+const int pinX2 = A4;       // Analog Gyro
+const int pinZ2 = A5;       // Analog Gyro
+const int pinRef = A6;      // Analog Gyro
+const int pinAZ = 7;        // Digital I/O Gyro
 
 const double x1Sens = 2.0;  // Sensitivity x-Out
 const double z1Sens = 2.0;  // Sensitivity z-Out
@@ -35,11 +35,11 @@ void setup() {
 
 void loop() {
   // put your main code here, to run repeatedly:
-  x1Rate = analogRead(pinX1);      // Liest Analog input pin 2
-  z1Rate = analogRead(pinZ1);      // Liest Analog input pin 3
-  x2Rate = analogRead(pinX2);      // Liest Analog input pin 4
-  z2Rate = analogRead(pinZ2);      // Liest Analog input pin 5
-  Vref = analogRead(pinRef);       // Liest Analog input pin 6
+  x1Rate = analogRead(pinX1);      // Liest Analog input x-Out
+  z1Rate = analogRead(pinZ1);      // Liest Analog input z-Out
+  x2Rate = analogRead(pinX2);      // Liest Analog input x4.5-Out
+  z2Rate = analogRead(pinZ2);      // Liest Analog input z4.5-Out
+  Vref = analogRead(pinRef);       // Liest Analog input Ref
 
   Serial.print("Rohdaten x1 ,z1: ");
   Serial.print(x1Rate, DEC);    // Ausgabe Rotation  in Achse  X
