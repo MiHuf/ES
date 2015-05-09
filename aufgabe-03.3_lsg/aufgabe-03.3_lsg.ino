@@ -21,17 +21,32 @@ const int servoPin = 3;         // Servo-Pin
 const int wmin = 24;            // Servo-Grenzwert, ermittelt
 const int wmax = 159;           // Servo-Grenzwert, ermittelt
 const double schwelle = 5.0;    // Schwellwert fuer Servo-Ausgabe
-int welchesGyro = pinX1;        // evtl. anpassen
+int welchesGyro = pinZ1;        // evtl. anpassen
 // for LED
 const int led = 13;             // Internal LED
 
+// Timer Params and Variables
+const uint32_t dwChannel = 0;
+const uint32_t dwMode = 0b000 | 0b10 << 13 | 0b1 << 15;  // = 49152 = C000
+uint32_t timerValue = 0;        // Millisekunden
+
 // Variables
 Servo neuServo;                 // Servo-Objekt erstellen
-int zeit = 100;                 // Wartezeit zwischen Abtastung des Gyros
-int winkel = (wmax - wmin) / 2; // Mittelstellung
+int zeit = 100;                 // Wartezeit in ms zwischen Abtastung des Gyros
+int winkel = (wmax - wmin) / 2; // Mittelstellung am Anfang
 
 void setup() {
   // put your setup code here, to run once:
+  // Timer setup and start
+  pmc_set_writeprotect(false);
+  pmc_enable_periph_clk(ID_TC6);                   // Timer 2, channel 0
+  TC_Configure(TC2, dwChannel, dwMode);
+  TC2->TC_CHANNEL[dwChannel].TC_IER = 0b1 << 4;    // siehe Datenblatt Seite 917
+  TC2->TC_CHANNEL[dwChannel].TC_IDR = ~(0b1 << 4); // siehe Datenblatt Seite 918
+  NVIC_ClearPendingIRQ(TC6_IRQn);                  // Timer 2, channel 0
+  NVIC_EnableIRQ(TC6_IRQn);                        // Timer 2, channel 0
+  TC_SetRC(TC2, dwChannel, 41999);                 // = 84.000.000 / 2 - 1.000
+  TC_Start(TC2, dwChannel);
   // Setup for Gyro
   pinMode(pinX1, INPUT);
   pinMode(pinZ1, INPUT);
@@ -39,6 +54,7 @@ void setup() {
   pinMode(pinZ2, INPUT);
   pinMode(pinRef, INPUT);
   pinMode(pinAZ, OUTPUT);
+  // 1 Sekunde Reset Impuls an Gyro
   digitalWrite(pinAZ, LOW);
   delay(1000);
   digitalWrite(pinAZ, HIGH);
@@ -52,26 +68,30 @@ void setup() {
 }
 
 void loop() {
-  double omega;
   // put your main code here, to run repeatedly:
-  omega = readGyro();
-  winkel = winkel + (int) (omega / 10.0);
+}
+
+void updateServo() {
+  // Gyro auslesen, neuen Winkel berechnen und Servo einstellen
+  double omega;
+  omega = readGyro();  // Winkelgeschwindigkeit in Grad pro Sekunde
+  winkel = winkel + int ((omega / 10.0) + 0.5);  // 10x pro Sekunde
   if (winkel < wmin) {
     blink();
     winkel = wmin;
   }
-  if (winkel < wmax) {
+  if (winkel > wmax) {
     blink();
     winkel = wmax;
   }
-  moveServo();
-  delay(zeit);                             // Warten
+  moveServo(winkel);
 }
 
-void moveServo() {
-  neuServo.write(winkel);                  // Sollwert schreiben
-  Serial.print("Winkel = ");
-  Serial.println(winkel);                  // Ausgabe zur Kontrolle
+void moveServo(int w) {
+  // Servo auf den Winkel w einstellen
+  // Serial.print("Winkel = ");
+  // Serial.println(w);                       // Ausgabe zur Kontrolle
+  neuServo.write(w);                       // Servo einstellen
 }
 
 void blink() {
@@ -86,32 +106,27 @@ void blink() {
 }
 
 double readGyro() {
-  // Gyro auslesen und verarbeiten
-  int x1Rate, z1Rate;              // x-Out, z-Out
-  int x2Rate, z2Rate;              // x4.5-Out , z4.5-Out
+  // Gyro auslesen und verarbeiten, gibt die Winkelgeschwindigkeit
+  // in Grad pro Sekunde zurück
   int Vref;
   int rate;
   double sens, omega;
-  x1Rate = analogRead(pinX1);      // Liest Analog input x-Out
-  z1Rate = analogRead(pinZ1);      // Liest Analog input z-Out
-  x2Rate = analogRead(pinX2);      // Liest Analog input x4.5-Out
-  z2Rate = analogRead(pinZ2);      // Liest Analog input z4.5-Out
-  Vref = analogRead(pinRef);       // Liest Analog input Ref
+  Vref = analogRead(pinRef);         // Liest Analog input Ref
   switch (welchesGyro) {
     case pinX1:
-      rate = x1Rate;
+      rate = analogRead(pinX1);      // Liest Analog input x-Out
       sens = x1Sens;
       break;
     case pinZ1:
-      rate = z1Rate;
+      rate = analogRead(pinZ1);      // Liest Analog input z-Out
       sens = z1Sens;
       break;
     case pinX2:
-      rate = x2Rate;
+      rate = analogRead(pinX2);      // Liest Analog input x4.5-Out
       sens = x2Sens;
       break;
     case pinZ2:
-      rate = z2Rate;
+      rate = analogRead(pinZ2);      // Liest Analog input z4.5-Out
       sens = z2Sens;
       break;
   }
@@ -120,5 +135,15 @@ double readGyro() {
     omega = 0.0;
   }
   return omega;
+}
+
+void TC6_Handler() {
+  // tu was
+  uint32_t stat;
+  stat = TC_GetStatus(TC2, dwChannel);
+  timerValue = timerValue + 1;
+  if ((timerValue % zeit) == 0) {  // alle 100 ms
+    updateServo();
+  }
 }
 
