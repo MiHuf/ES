@@ -24,6 +24,7 @@ const double schwelle = 5.0;    // Schwellwert fuer Servo-Ausgabe
 int welchesGyro = pinZ1;        // evtl. anpassen
 // for LED
 const int led = 13;             // Internal LED
+int blinkTimer = 14;            // zu kompliziert zu erklaeren
 
 // Timer Params and Variables
 const uint32_t dwChannel = 0;
@@ -37,16 +38,6 @@ int winkel = (wmax - wmin) / 2; // Mittelstellung am Anfang
 
 void setup() {
   // put your setup code here, to run once:
-  // Timer setup and start
-  pmc_set_writeprotect(false);
-  pmc_enable_periph_clk(ID_TC6);                   // Timer 2, channel 0
-  TC_Configure(TC2, dwChannel, dwMode);
-  TC2->TC_CHANNEL[dwChannel].TC_IER = 0b1 << 4;    // siehe Datenblatt Seite 917
-  TC2->TC_CHANNEL[dwChannel].TC_IDR = ~(0b1 << 4); // siehe Datenblatt Seite 918
-  NVIC_ClearPendingIRQ(TC6_IRQn);                  // Timer 2, channel 0
-  NVIC_EnableIRQ(TC6_IRQn);                        // Timer 2, channel 0
-  TC_SetRC(TC2, dwChannel, 41999);                 // = 84.000.000 / 2 - 1.000
-  TC_Start(TC2, dwChannel);
   // Setup for Gyro
   pinMode(pinX1, INPUT);
   pinMode(pinZ1, INPUT);
@@ -63,6 +54,16 @@ void setup() {
   neuServo.write(winkel);        // Mittelstellung
   pinMode(led, OUTPUT);
   digitalWrite(led, HIGH);       // LED OFF
+  // Timer setup and start
+  pmc_set_writeprotect(false);
+  pmc_enable_periph_clk(ID_TC6);                   // Timer 2, channel 0
+  TC_Configure(TC2, dwChannel, dwMode);
+  TC2->TC_CHANNEL[dwChannel].TC_IER = 0b1 << 4;    // siehe Datenblatt Seite 917
+  TC2->TC_CHANNEL[dwChannel].TC_IDR = ~(0b1 << 4); // siehe Datenblatt Seite 918
+  NVIC_ClearPendingIRQ(TC6_IRQn);                  // Timer 2, channel 0
+  NVIC_EnableIRQ(TC6_IRQn);                        // Timer 2, channel 0
+  TC_SetRC(TC2, dwChannel, 41999);                 // = 84.000.000 / 2 - 1.000
+  TC_Start(TC2, dwChannel);
 
   Serial.begin(9600);
 }
@@ -77,11 +78,11 @@ void updateServo() {
   omega = readGyro();  // Winkelgeschwindigkeit in Grad pro Sekunde
   winkel = winkel + int ((omega / 10.0) + 0.5);  // 10x pro Sekunde
   if (winkel < wmin) {
-    blink();
+    setBlink();
     winkel = wmin;
   }
   if (winkel > wmax) {
-    blink();
+    setBlink();
     winkel = wmax;
   }
   moveServo(winkel);
@@ -94,14 +95,23 @@ void moveServo(int w) {
   neuServo.write(w);                       // Servo einstellen
 }
 
-void blink() {
-  // 3x LED blinken
-  digitalWrite(led, HIGH);         // LED OFF
-  for (int i = 0; i < 3; i++) {
-    digitalWrite(led, LOW);        // LED ON
-    delay(300);
-    digitalWrite(led, HIGH);       // LED OFF
-    delay(200);
+void setBlink() {
+  if (blinkTimer == 0) {
+    blinkTimer = 14;
+  }
+}
+
+void checkBlink() {
+  if (blinkTimer > 0) {
+    switch (blinkTimer) {
+      case 14 : case 9 : case 4:
+        digitalWrite(led, LOW);        // LED ON
+        break;
+      case 11: case 6: case 1:
+        digitalWrite(led, HIGH);       // LED OFF
+        break;
+    }
+    blinkTimer --;
   }
 }
 
@@ -144,6 +154,7 @@ void TC6_Handler() {
   timerValue = timerValue + 1;
   if ((timerValue % zeit) == 0) {  // alle 100 ms
     updateServo();
+    checkBlink();
   }
 }
 
