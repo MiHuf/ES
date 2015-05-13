@@ -20,9 +20,9 @@ const double z2Sens = 9.1;      // Sensitivity z4.5-Out
 const int servoPin = 3;         // Servo-Pin
 const int wmin = 24;            // Servo-Grenzwert, ermittelt
 const int wmax = 159;           // Servo-Grenzwert, ermittelt
-const double schwelle = 3.0;    // Schwellwert fuer Gyro-Ausgabe
-const double gain = 0.5;        // Verstaerkung fuer Gyro
-int welchesGyro = pinZ2;        // evtl. anpassen
+const double schwelle = 1.0;    // Schwellwert fuer Gyro-Ausgabe
+const double gain = 0.1;        // Verstaerkung fuer Gyro
+int welchesGyro = pinZ1;        // evtl. anpassen
 // for LED
 const int led = 13;             // Internal LED
 
@@ -148,7 +148,7 @@ double readGyro() {
       sens = z2Sens;
       break;
   }
-  omega = ((double) rate - (double) Vref) / sens;
+  omega = (5000.0 / 1024.0) *((double) rate - (double) Vref) / sens;
   if (abs(omega) < schwelle) {
     omega = 0.0;
   }
