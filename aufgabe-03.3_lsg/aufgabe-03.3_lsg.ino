@@ -1,4 +1,4 @@
-// Aufgabe 3.3, Stand von 2015-05-08
+// Aufgabe 3.3, Stand von 2015-05-13
 // Lösung von Michael Hufschmidt   michael@hufschmidt-web.de,
 //            Tim Welge            tw@ens-fiti.de
 //            Rania Wittenberg     rania_wittenberg@hotmail.com
@@ -21,7 +21,7 @@ const int servoPin = 3;         // Servo-Pin
 const int wmin = 24;            // Servo-Grenzwert, ermittelt
 const int wmax = 159;           // Servo-Grenzwert, ermittelt
 const double schwelle = 5.0;    // Schwellwert fuer Servo-Ausgabe
-int welchesGyro = pinZ1;        // evtl. anpassen
+int welchesGyro = pinZ2;        // evtl. anpassen
 // for LED
 const int led = 13;             // Internal LED
 
@@ -53,7 +53,7 @@ void setup() {
   neuServo.attach(servoPin);     // Servo an Pin 3
   neuServo.write(winkel);        // Mittelstellung
   pinMode(led, OUTPUT);
-  digitalWrite(led, LOW);       // LED OFF
+  digitalWrite(led, LOW);        // LED OFF
   // Timer setup and start
   pmc_set_writeprotect(false);
   pmc_enable_periph_clk(ID_TC6);                   // Timer 2, channel 0
@@ -65,7 +65,7 @@ void setup() {
   TC_SetRC(TC2, dwChannel, 41999);                 // = 84.000.000 / 2 - 1.000
   TC_Start(TC2, dwChannel);
 
-  setBlink();
+  setBlink();                                      // am Anfang einmal testen
 
   Serial.begin(9600);
 }
@@ -112,7 +112,7 @@ void checkBlink() {
         digitalWrite(led, HIGH);        // LED ON
         break;
       case 11: case 6: case 1:
-        digitalWrite(led, LOW);       // LED OFF
+        digitalWrite(led, LOW);         // LED OFF
         break;
     }
     blinkTimer = blinkTimer -1;
