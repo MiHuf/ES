@@ -24,12 +24,12 @@ const double schwelle = 5.0;    // Schwellwert fuer Servo-Ausgabe
 int welchesGyro = pinZ1;        // evtl. anpassen
 // for LED
 const int led = 13;             // Internal LED
-int blinkTimer = 14;            // zu kompliziert zu erklaeren
 
 // Timer Params and Variables
 const uint32_t dwChannel = 0;
 const uint32_t dwMode = 0b000 | 0b10 << 13 | 0b1 << 15;  // = 49152 = C000
 uint32_t timerValue = 0;        // Millisekunden
+int blinkTimer = 14;            // zu kompliziert zu erklaeren
 
 // Variables
 Servo neuServo;                 // Servo-Objekt erstellen
@@ -53,7 +53,7 @@ void setup() {
   neuServo.attach(servoPin);     // Servo an Pin 3
   neuServo.write(winkel);        // Mittelstellung
   pinMode(led, OUTPUT);
-  digitalWrite(led, HIGH);       // LED OFF
+  digitalWrite(led, LOW);       // LED OFF
   // Timer setup and start
   pmc_set_writeprotect(false);
   pmc_enable_periph_clk(ID_TC6);                   // Timer 2, channel 0
@@ -64,6 +64,8 @@ void setup() {
   NVIC_EnableIRQ(TC6_IRQn);                        // Timer 2, channel 0
   TC_SetRC(TC2, dwChannel, 41999);                 // = 84.000.000 / 2 - 1.000
   TC_Start(TC2, dwChannel);
+
+  setBlink();
 
   Serial.begin(9600);
 }
@@ -77,6 +79,7 @@ void updateServo() {
   double omega;
   omega = readGyro();  // Winkelgeschwindigkeit in Grad pro Sekunde
   winkel = winkel + int ((omega / 10.0) + 0.5);  // 10x pro Sekunde
+//   winkel = (wmax - wmin) / 2 ;
   if (winkel < wmin) {
     setBlink();
     winkel = wmin;
@@ -90,28 +93,29 @@ void updateServo() {
 
 void moveServo(int w) {
   // Servo auf den Winkel w einstellen
-  // Serial.print("Winkel = ");
-  // Serial.println(w);                       // Ausgabe zur Kontrolle
+  Serial.print("Winkel = ");
+  Serial.println(w);                       // Ausgabe zur Kontrolle
   neuServo.write(w);                       // Servo einstellen
 }
 
 void setBlink() {
-  if (blinkTimer == 0) {
+  if (blinkTimer <= 0) {
     blinkTimer = 14;
   }
 }
 
 void checkBlink() {
+  // Serial.println(blinkTimer);              // Ausgabe zur Kontrolle
   if (blinkTimer > 0) {
     switch (blinkTimer) {
       case 14 : case 9 : case 4:
-        digitalWrite(led, LOW);        // LED ON
+        digitalWrite(led, HIGH);        // LED ON
         break;
       case 11: case 6: case 1:
-        digitalWrite(led, HIGH);       // LED OFF
+        digitalWrite(led, LOW);       // LED OFF
         break;
     }
-    blinkTimer --;
+    blinkTimer = blinkTimer -1;
   }
 }
 
