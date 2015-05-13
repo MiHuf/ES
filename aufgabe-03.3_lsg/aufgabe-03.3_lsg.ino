@@ -20,7 +20,8 @@ const double z2Sens = 9.1;      // Sensitivity z4.5-Out
 const int servoPin = 3;         // Servo-Pin
 const int wmin = 24;            // Servo-Grenzwert, ermittelt
 const int wmax = 159;           // Servo-Grenzwert, ermittelt
-const double schwelle = 5.0;    // Schwellwert fuer Servo-Ausgabe
+const double schwelle = 3.0;    // Schwellwert fuer Gyro-Ausgabe
+const double gain = 0.5;        // Verstaerkung fuer Gyro
 int welchesGyro = pinZ2;        // evtl. anpassen
 // for LED
 const int led = 13;             // Internal LED
@@ -78,7 +79,7 @@ void updateServo() {
   // Gyro auslesen, neuen Winkel berechnen und Servo einstellen
   double omega;
   omega = readGyro();  // Winkelgeschwindigkeit in Grad pro Sekunde
-  winkel = winkel + int ((omega / 10.0) + 0.5);  // 10x pro Sekunde
+  winkel = winkel + int (gain * omega + 0.5);    // Geschwindigkeit angepassen 
 //   winkel = (wmax - wmin) / 2 ;
   if (winkel < wmin) {
     setBlink();
