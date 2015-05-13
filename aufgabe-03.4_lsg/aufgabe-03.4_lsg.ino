@@ -6,7 +6,7 @@
   String readString;
   int swli = 4;
   int swre = 9;
-  int led = 7;
+  int led = 13;
   void setup() {
     pinMode(led, OUTPUT);
     }
