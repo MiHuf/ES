@@ -38,7 +38,6 @@ void loop() {
   char c = 0;
   pos = 0;
   winkel = 0;
-  // command = "";
   while (Serial.available()) {
     do {
       c = Serial.read();
