@@ -96,8 +96,10 @@ void sendBright() {
 
 void doPb1() {
   // initiiert den Zyklus
-  increase = true;
-  bright = 1;
+  if (pb1.validLow()) {
+    increase = true;
+    bright = 1;
+  }
 }
 
 void parseCommand() {
