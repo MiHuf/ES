@@ -1,4 +1,4 @@
-// Aufgabe 4.1, Stand von 2015-05-18
+// Aufgabe 4.1, Stand von 2015-05-19
 // Lösung von Michael Hufschmidt   michael@hufschmidt-web.de,
 //            Tim Welge            tw@ens-fiti.de
 //            Rania Wittenberg     rania_wittenberg@hotmail.com
@@ -37,23 +37,24 @@ void setup() {
   TC2->TC_CHANNEL[dwChannel].TC_IDR = ~(0b1 << 4); // Datenblatt Seite 918
   NVIC_ClearPendingIRQ(TC6_IRQn);       // Timer 2, channel 0
   NVIC_EnableIRQ(TC6_IRQn);             // Timer 2, channel 0
-  TC_SetRC(TC2, dwChannel, 41999);      // (84 MHz / 2 - 1 Hz) set to 1 kHz
+  TC_SetRC(TC2, dwChannel, 41999);      // (84 MHz / 2 - 1 kHz) set to 1 kHz
   TC_Start(TC2, dwChannel);
 
   // Other setup
   pinMode(pinLed, OUTPUT);
+  digitalWrite(pinLed, LOW);            // LED Off
   pb1.keyInit(pinKey);
-  digitalWrite(pinLed, LOW);
   Serial.begin(9600);
   Serial3.begin(9600);
 }
 
 void loop() {
+  // put your main code here, to run repeatedly:
 }  // end loop
 
 void setBlink() {
   if (blinkTimer <= 0) {                // if in non-blink mode
-    blinkTimer = 14;
+    blinkTimer = 14;                    // set to blink-mode
   }
 }
 
