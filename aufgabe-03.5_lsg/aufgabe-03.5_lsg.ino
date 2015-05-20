@@ -1,4 +1,4 @@
-// Aufgabe 3.5, Stand von 2015-05-19
+// Aufgabe 3.5, Stand von 2015-05-20
 // Version mit serialEvent()
 // Lösung von Michael Hufschmidt   michael@hufschmidt-web.de,
 //            Tim Welge            tw@ens-fiti.de
@@ -14,6 +14,7 @@ const int wmax = 159;                   // Servo-Grenzwert, ermittelt
 const int led = 13;                     // Internal LED
 // for Strings
 const int len = 160;                    // Länge Zeilenpuffer
+const String ziffern = " 0123456789+-"; //
 
 // Variables
 char zeile[len];                        // Zeilenpuffer
@@ -38,16 +39,23 @@ void loop() {
 }  // end loop
 
 void parseCommand() {
-  int posBracket;                       // Pointer im Command-String
+  int posZi, posBracket;                // Pointer im Command-String
   String sWinkel;                       // Winkel als String
   command = String(zeile);              // Konvertiere in einen String
   Serial.println(command);              // Zum Testen: Ausgabe auf dem Terminal
   posBracket = command.indexOf(")");
   if ((command.substring(0, 7).compareTo("moveTo(") == 0) && (posBracket > 0) ) {
-    sWinkel = command.substring(7, posBracket);
+    posZi = 7;
+    while ((ziffern.indexOf(command.charAt(posZi)) >= 0) && (posZi < command.length() + 1)) {
+      posZi ++;
+    }
+    sWinkel = command.substring(7, posZi);
+//    Serial.print("posZi = ");           // zum Testen
+//    Serial.println(posZi);
+//    Serial.println(sWinkel);
     winkel = sWinkel.toInt();
-    if (winkel == 0) {
-      Serial.println(sWinkel + " ist kein Integer");
+    if ((posZi != posBracket) || (winkel == 0)) {
+      Serial.println("ungueltiger Winkel");
     } else {
       if (winkel < wmin) {
         Serial.print(winkel);
