@@ -114,7 +114,7 @@ void parseCommand() {
       sbright = String(zeile).substring(2);
       _bright = sbright.toInt();
       analogWrite(pinLed, _bright);
-      if ((_bright == 0) || (_bright == 255)) {
+      if ((_bright <= 1) || (_bright >= 255)) {
         Serial3.println("b");            // send Blink-Command
       }
       break;
@@ -143,10 +143,10 @@ void TC6_Handler() {
   timerValue = timerValue + 1;
   // tu was
   if (pb1.checkKey()) doPb1();
-  if ((timerValue % 20) == 0) {  // every 20 ms
+  if ((timerValue % 20) == 0) {   // every 20 ms
     checkBright();
   }
-  if ((timerValue % 200) == 0) {  // every 200 ms
+  if ((timerValue % 100) == 0) {  // every 100 ms
     checkBlink();
   }
 }
