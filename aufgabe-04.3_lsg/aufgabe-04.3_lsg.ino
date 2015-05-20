@@ -1,4 +1,4 @@
-// Aufgabe 4.3, Stand von 2015-05-19
+// Aufgabe 4.3, Stand von 2015-05-20
 // Lösung von Michael Hufschmidt   michael@hufschmidt-web.de,
 //            Tim Welge            tw@ens-fiti.de
 //            Rania Wittenberg     rania_wittenberg@hotmail.com
@@ -42,7 +42,7 @@ const uint32_t dwMode = 0b000 | 0b10 << 13 | 0b1 << 15;  // = 49152 = C000
 
 // Variables
 const int len = 160;                    // length of line buffer
-char zeile[len];                        // line buffer
+byte inBuffer[len];                     // data bufferconst int len = 160;                    // length of line buffer
 int pos = 0;                            // position within line buffer
 uint32_t timerValue = 0;                // Timer value in milliseconds
 Servo neuServo;                         // Servo-Objekt erstellen
@@ -84,9 +84,8 @@ void setup() {
     Wire.onRequest(masterHandler);
   } else {
     Wire.begin(adrSlave);
-    Wire.onRequest(slaveHandler);
+    Wire.onReceive(slaveHandler);
   }
-
   Serial.begin(9600);
 }
 
@@ -152,8 +151,17 @@ void masterHandler() {
   //
 }
 
-void slaveHandler() {
-  //
+void slaveHandler(int howMany) {
+  byte c;
+  pos = 0;
+  while (Wire.available()) {
+    c = Wire.read();
+    inBuffer[pos] = c;
+    pos ++ ;
+  }
+  // digitalWrite(pinLed, HIGH);
+  Serial.print("Slave: ");
+  Serial.println(c);
 }
 
 void TC6_Handler() {

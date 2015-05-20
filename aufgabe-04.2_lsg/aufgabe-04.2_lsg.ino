@@ -1,4 +1,4 @@
-// Aufgabe 4.2, Stand von 2015-05-19
+// Aufgabe 4.2, Stand von 2015-05-20
 // Lösung von Michael Hufschmidt   michael@hufschmidt-web.de,
 //            Tim Welge            tw@ens-fiti.de
 //            Rania Wittenberg     rania_wittenberg@hotmail.com
@@ -10,8 +10,8 @@ const int pinLed = 13;                  // internal LED
 // I2C pins are SDA = 20, SCL = 21
 
 // Other Constants
-const bool isMaster = true;             // to be adapted before upload
-const int adrMaster = 42;               // what's about the world
+const bool isMaster = false;             // to be adapted before upload
+const int adrMaster =  0;               // what's about the world
 const int adrSlave = 17;                // my birthdate
 
 // Timer Params
@@ -23,9 +23,11 @@ const uint32_t dwMode = 0b000 | 0b10 << 13 | 0b1 << 15;  // = 49152 = C000
 
 // Variables
 const int len = 160;                    // length of line buffer
-char zeile[len];                        // line buffer
+byte inBuffer[len];                     // data buffer
 int pos = 0;                            // position within line buffer
 uint32_t timerValue = 0;                // Timer value in milliseconds
+byte slaveLed = 0;                      // LED on slave
+byte localLed = 0;                      // LED on local
 
 void setup() {
   // put your setup code here, to run once:
@@ -48,7 +50,7 @@ void setup() {
     Wire.onRequest(masterHandler);
   } else {
     Wire.begin(adrSlave);
-    Wire.onRequest(slaveHandler);
+    Wire.onReceive(slaveHandler);
   }
   Serial.begin(9600);
 }
@@ -57,11 +59,36 @@ void loop() {
   // put your main code here, to run repeatedly:
 }  // end loop
 
+void switchLedOnSlave() {
+  Wire.beginTransmission(adrSlave);
+  Wire.write(slaveLed);                // sends value byte
+  Wire.endTransmission();               // stop transmitting
+  Serial.print("Master: ");
+  Serial.println(slaveLed);
+  slaveLed = 1 - slaveLed;
+}
+
+void switchLedLocal() {
+  digitalWrite(pinLed, localLed);
+  Serial.print("Loca1: ");
+  Serial.println(localLed);
+  localLed = 1 - localLed;
+}
+
 void masterHandler() {
   //
 }
-void slaveHandler() {
-  //
+void slaveHandler(int howMany) {
+  byte c;
+  pos = 0;
+  while (Wire.available()) {
+    c = Wire.read();
+    inBuffer[pos] = c;
+    pos ++ ;
+  }
+  digitalWrite(pinLed, HIGH);
+  Serial.print("Slave: ");
+  Serial.println(c);
 }
 void TC6_Handler() {
   uint32_t stat;
@@ -69,7 +96,10 @@ void TC6_Handler() {
   timerValue = timerValue + 1;
   // tu was
   if ((timerValue % 1000) == 0) {  // every 1000 ms
-    //
+    // switchLedLocal();
+    if (isMaster) {
+      switchLedOnSlave();
+    }
   }
 }
 
