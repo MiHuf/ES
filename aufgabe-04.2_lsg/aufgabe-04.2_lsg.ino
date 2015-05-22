@@ -1,4 +1,4 @@
-// Aufgabe 4.2, Stand von 2015-05-20
+// Aufgabe 4.2, Stand von 2015-05-22
 // Lösung von Michael Hufschmidt   michael@hufschmidt-web.de,
 //            Tim Welge            tw@ens-fiti.de
 //            Rania Wittenberg     rania_wittenberg@hotmail.com
@@ -10,7 +10,7 @@ const int pinLed = 13;                  // internal LED
 // I2C pins are SDA = 20, SCL = 21
 
 // Other Constants
-const bool isMaster = false;             // to be adapted before upload
+const bool isMaster = true;             // to be adapted before upload
 const int adrMaster =  0;               // what's about the world
 const int adrSlave = 17;                // my birthdate
 
@@ -60,8 +60,8 @@ void loop() {
 }  // end loop
 
 void switchLedOnSlave() {
-  Wire.beginTransmission(adrSlave);
-  Wire.write(slaveLed);                // sends value byte
+  Wire.beginTransmission(adrSlave);     // to slave
+  Wire.write(slaveLed);                 // send value byte
   Wire.endTransmission();               // stop transmitting
   Serial.print("Master: ");
   Serial.println(slaveLed);
@@ -86,9 +86,11 @@ void slaveHandler(int howMany) {
     inBuffer[pos] = c;
     pos ++ ;
   }
-  digitalWrite(pinLed, HIGH);
+  digitalWrite(pinLed, c);
+//  digitalWrite(pinLed, HIGH);
   Serial.print("Slave: ");
   Serial.println(c);
+  pos = 0;
 }
 void TC6_Handler() {
   uint32_t stat;
