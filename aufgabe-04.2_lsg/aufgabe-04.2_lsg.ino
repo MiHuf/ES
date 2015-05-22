@@ -10,8 +10,7 @@ const int pinLed = 13;                  // internal LED
 // I2C pins are SDA = 20, SCL = 21
 
 // Other Constants
-const bool isMaster = true;             // to be adapted before upload
-const int adrMaster =  0;               // what's about the world
+const bool isMaster = true;            // to be adapted before upload
 const int adrSlave = 17;                // my birthdate
 
 // Timer Params
@@ -46,8 +45,7 @@ void setup() {
   pinMode(pinLed, OUTPUT);
   digitalWrite(pinLed, LOW);            // LED Off
   if (isMaster) {
-    Wire.begin(adrMaster);
-    Wire.onRequest(masterHandler);
+    Wire.begin();
   } else {
     Wire.begin(adrSlave);
     Wire.onReceive(slaveHandler);
@@ -60,12 +58,19 @@ void loop() {
 }  // end loop
 
 void switchLedOnSlave() {
+  byte result, c;
   Wire.beginTransmission(adrSlave);     // to slave
   Wire.write(slaveLed);                 // send value byte
-  Wire.endTransmission();               // stop transmitting
+  result = Wire.endTransmission();      // stop transmitting
   Serial.print("Master: ");
   Serial.println(slaveLed);
   slaveLed = 1 - slaveLed;
+  Wire.requestFrom(adrSlave, 1);        // 1 byte from slave
+  while (Wire.available()) {
+    c = Wire.read();
+  }
+  Serial.print("From slave: ");
+  Serial.println(c);  
 }
 
 void switchLedLocal() {
@@ -75,22 +80,18 @@ void switchLedLocal() {
   localLed = 1 - localLed;
 }
 
-void masterHandler() {
-  //
-}
 void slaveHandler(int howMany) {
   byte c;
-  pos = 0;
-  while (Wire.available()) {
+  for (int i = 0; i < howMany; i++)     {
     c = Wire.read();
-    inBuffer[pos] = c;
-    pos ++ ;
-  }
+    inBuffer[i] = c;
+  }  // end of for loop
   digitalWrite(pinLed, c);
-//  digitalWrite(pinLed, HIGH);
   Serial.print("Slave: ");
   Serial.println(c);
-  pos = 0;
+  Wire.beginTransmission (0);
+  Wire.write(c);
+  Wire.endTransmission();
 }
 void TC6_Handler() {
   uint32_t stat;
