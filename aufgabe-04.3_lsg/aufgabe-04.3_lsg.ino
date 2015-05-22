@@ -1,4 +1,4 @@
-// Aufgabe 4.3, Stand von 2015-05-20
+// Aufgabe 4.3, Stand von 2015-05-22
 // Lösung von Michael Hufschmidt   michael@hufschmidt-web.de,
 //            Tim Welge            tw@ens-fiti.de
 //            Rania Wittenberg     rania_wittenberg@hotmail.com
@@ -30,7 +30,6 @@ int welchesGyro = pinZ1;                // evtl. anpassen
 
 // Other Constants
 const bool isMaster = true;             // to be adapted before upload
-const int adrMaster = 42;               // what's about the world
 const int adrSlave = 17;                // my birthdate
 
 // Timer Params
@@ -80,8 +79,7 @@ void setup() {
   pinMode(pinLed, OUTPUT);
   digitalWrite(pinLed, LOW);            // LED Off
   if (isMaster) {
-    Wire.begin(adrMaster);
-    Wire.onRequest(masterHandler);
+    Wire.begin();
   } else {
     Wire.begin(adrSlave);
     Wire.onReceive(slaveHandler);
@@ -147,21 +145,21 @@ double readGyro() {
   return omega;
 }
 
-void masterHandler() {
-  //
-}
-
 void slaveHandler(int howMany) {
   byte c;
-  pos = 0;
-  while (Wire.available()) {
+  for (int i = 0; i < howMany; i++)     {
     c = Wire.read();
-    inBuffer[pos] = c;
-    pos ++ ;
-  }
+    inBuffer[i] = c;
+  }  // end of for loop
+
   // digitalWrite(pinLed, HIGH);
   Serial.print("Slave: ");
   Serial.println(c);
+  
+    Wire.beginTransmission (0);
+ Wire.write(c);
+  Wire.endTransmission();
+}
 }
 
 void TC6_Handler() {
