@@ -95,8 +95,8 @@ void updateServo() {
   // Gyro auslesen, neuen Winkel berechnen und Servo einstellen
   double omega;
   omega = readGyro();                   // Winkelgeschwindigkeit Grad pro Sekunde
-  winkel = winkel + int (gain * omega + 0.5); // Geschwindigkeit angepassen 
-//   winkel = (wmax - wmin) / 2 ;
+  winkel = winkel + int (gain * omega + 0.5); // Geschwindigkeit angepassen
+  //   winkel = (wmax - wmin) / 2 ;
   if (winkel < wmin) {
     // setBlink();
     winkel = wmin;
@@ -113,32 +113,37 @@ void moveServo(int w) {
   Serial.println(w);                    // Ausgabe zur Kontrolle
   neuServo.write(w);                    // Servo einstellen
 }
-double readGyro() {
+
+void checkGyro() {
+  // check Gyro an Slave
+}
+
+int readGyro() {
+  int rate, vref;
+  vref = analogRead(pinRef);         // Liest Analog input Ref
+  rate = analogRead(welchesGyro);
+  return rate - vref;
+}
+
+double gyroToWinkel(int wint) {
   // Gyro auslesen und verarbeiten, gibt die Winkelgeschwindigkeit
   // in Grad pro Sekunde zurück, Ermittlung des Faktors siehe Zeilen 19, 20
-  int Vref;
-  int rate;                             // Rohdaten vom Gyro
   double factor, omega;
-  Vref = analogRead(pinRef);            // Liest Analog input Ref
   switch (welchesGyro) {
     case pinX1:
-      rate = analogRead(pinX1);         // Liest Analog input x-Out
       factor = factor2;
       break;
     case pinZ1:
-      rate = analogRead(pinZ1);         // Liest Analog input z-Out
       factor = factor2;
       break;
     case pinX2:
-      rate = analogRead(pinX2);         // Liest Analog input x4.5-Out
       factor = factor45;
       break;
     case pinZ2:
-      rate = analogRead(pinZ2);         // Liest Analog input z4.5-Out
       factor = factor45;
       break;
   }
-  omega = factor * ((double) rate - (double) Vref);
+  omega = factor * (double) wint;
   if (abs(omega) < schwelle) {
     omega = 0.0;
   }
@@ -147,7 +152,7 @@ double readGyro() {
 
 void slaveHandler(int howMany) {
   byte c;
-  for (int i = 0; i < howMany; i++)     {
+  for (int i = 0; i < howMany; i++) {
     c = Wire.read();
     inBuffer[i] = c;
   }  // end of for loop
@@ -155,11 +160,9 @@ void slaveHandler(int howMany) {
   // digitalWrite(pinLed, HIGH);
   Serial.print("Slave: ");
   Serial.println(c);
-  
-    Wire.beginTransmission (0);
- Wire.write(c);
+  Wire.beginTransmission (0);
+  Wire.write(c);
   Wire.endTransmission();
-}
 }
 
 void TC6_Handler() {
@@ -168,7 +171,7 @@ void TC6_Handler() {
   timerValue = timerValue + 1;
   // tu was
   if ((timerValue % 100) == 0) {        // alle 100 ms
-    updateServo();
+    checkGyro();
   }
   if ((timerValue % 1000) == 0) {       // every 1000 ms
     //
