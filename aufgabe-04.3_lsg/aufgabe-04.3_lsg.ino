@@ -1,4 +1,4 @@
-// Aufgabe 4.3, Stand von 2015-05-22
+// Aufgabe 4.3, Stand von 2015-06-05
 // Lösung von Michael Hufschmidt   michael@hufschmidt-web.de,
 //            Tim Welge            tw@ens-fiti.de
 //            Rania Wittenberg     rania_wittenberg@hotmail.com
@@ -9,7 +9,7 @@
 // Pin Constants
 const int pinLed = 13;                  // internal LED
 // I2C pins are SDA = 20, SCL = 21
-// for Gyro
+// for Gyro on Slave Board
 const int pinX1 = A2;                   // Analog Gyro XOUT
 const int pinZ1 = A3;                   // Analog Gyro ZOUT
 const int pinX2 = A4;                   // Analog Gyro X4.5OUT
@@ -20,7 +20,7 @@ const int pinAZ = 7;                    // Digital I/O Gyro
 // Winkelgeschwindigkeit in Grad / Sekunde = factor * (rate - vref)
 const double factor2 = (5000.0 / 1024.0) / 2.0;
 const double factor45 = (5000.0 / 1024.0) / 9.1;
-// for Servo
+// for Servo on Master Board
 const int servoPin = 3;                 // Servo-Pin
 const int wmin = 24;                    // Servo-Grenzwert, ermittelt
 const int wmax = 159;                   // Servo-Grenzwert, ermittelt
@@ -29,7 +29,7 @@ const double gain = 0.1;                // Verstaerkung fuer Gyro
 int welchesGyro = pinZ1;                // evtl. anpassen
 
 // Other Constants
-const bool isMaster = true;             // to be adapted before upload
+const bool isMaster = false;             // to be adapted before upload
 const int adrSlave = 17;                // my birthdate
 
 // Timer Params
@@ -40,8 +40,8 @@ const uint32_t dwChannel = 0;
 const uint32_t dwMode = 0b000 | 0b10 << 13 | 0b1 << 15;  // = 49152 = C000
 
 // Variables
-const int len = 160;                    // length of line buffer
-byte inBuffer[len];                     // data bufferconst int len = 160;                    // length of line buffer
+const int len = sizeof(int);            // length of line buffer
+byte inBuffer[len];                     // data bufferconst int len = 160;
 int pos = 0;                            // position within line buffer
 uint32_t timerValue = 0;                // Timer value in milliseconds
 Servo neuServo;                         // Servo-Objekt erstellen
@@ -114,8 +114,8 @@ void moveServo(int w) {
   neuServo.write(w);                    // Servo einstellen
 }
 
-void checkGyro() {
-  // check Gyro an Slave
+void setServo(int w) {
+  // set Servo on Master
 }
 
 int readGyro() {
@@ -150,28 +150,56 @@ double gyroToWinkel(int wint) {
   return omega;
 }
 
+int checkGyro() {
+  byte result;
+  // check Gyro on Slave
+  int w = 0;
+  byte c;
+  Wire.beginTransmission(adrSlave);
+  Wire.write(0);                        // send value byte
+  result = Wire.endTransmission();      // stop transmitting
+  Wire.requestFrom(adrSlave, sizeof(int));
+  // while (Wire.available()) {
+  for (int i = 0; i < sizeof(int); i++) {
+    c = Wire.read();
+    inBuffer[sizeof(int) - i] = c;
+  }  // end of for loop
+  // }
+  w = (int) inBuffer;
+  Serial.print("Master: ");
+  Serial.println(w);
+  return w;
+}
+
 void slaveHandler(int howMany) {
   byte c;
-  for (int i = 0; i < howMany; i++) {
-    c = Wire.read();
-    inBuffer[i] = c;
-  }  // end of for loop
-
-  // digitalWrite(pinLed, HIGH);
-  Serial.print("Slave: ");
-  Serial.println(c);
+  int w;
+  c = Wire.read();    //  1 byte
+  w = readGyro();
   Wire.beginTransmission (0);
-  Wire.write(c);
+  for (int i = 0; i < sizeof(int); i++) {
+    c = w & 0xFF;     // lowest byte
+    // Wire.write(c);
+    Wire.write(0);
+    inBuffer[i] = c;
+    c = (w >> 8) & 0xFF;
+  }
   Wire.endTransmission();
+  Serial.print("Slave: ");
+  Serial.println(w);
 }
 
 void TC6_Handler() {
+  int w;
   uint32_t stat;
   stat = TC_GetStatus(TC2, dwChannel);
   timerValue = timerValue + 1;
   // tu was
   if ((timerValue % 100) == 0) {        // alle 100 ms
-    checkGyro();
+    if (isMaster) {
+      w = checkGyro();
+      setServo(w);
+    }
   }
   if ((timerValue % 1000) == 0) {       // every 1000 ms
     //
