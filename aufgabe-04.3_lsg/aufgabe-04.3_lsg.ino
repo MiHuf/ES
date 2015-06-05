@@ -29,7 +29,7 @@ const double gain = 0.1;                // Verstaerkung fuer Gyro
 int welchesGyro = pinZ1;                // evtl. anpassen
 
 // Other Constants
-const bool isMaster = false;             // to be adapted before upload
+const bool isMaster = true;             // to be adapted before upload
 const int adrSlave = 17;                // my birthdate
 
 // Timer Params
@@ -176,7 +176,7 @@ void slaveHandler(int howMany) {
   int w;
   c = Wire.read();    //  1 byte
   w = readGyro();
-  Wire.beginTransmission (0);
+  // Wire.beginTransmission (0);
   for (int i = 0; i < sizeof(int); i++) {
     c = w & 0xFF;     // lowest byte
     // Wire.write(c);
@@ -184,7 +184,7 @@ void slaveHandler(int howMany) {
     inBuffer[i] = c;
     c = (w >> 8) & 0xFF;
   }
-  Wire.endTransmission();
+  // Wire.endTransmission();
   Serial.print("Slave: ");
   Serial.println(w);
 }
