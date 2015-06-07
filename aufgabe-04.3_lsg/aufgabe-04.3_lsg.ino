@@ -46,7 +46,7 @@ const int len = sizeof(int);            // length of line buffer
 byte inBuffer[len];                     // data bufferconst int len = 160;
 int pos = 0;                            // position within line buffer
 uint32_t timerValue = 0;                // Timer value in milliseconds
-Servo neuServo;                         // Servo-Objekt erstellen
+Servo myServo;                          // Servo-Objekt erstellen
 int winkel = (wmax - wmin) / 2;         // Mittelstellung am Anfang
 
 void setup() {
@@ -64,8 +64,8 @@ void setup() {
   delay(1000);
   digitalWrite(pinAZ, HIGH);
   // Setup for Servo
-  neuServo.attach(servoPin);            // Servo an Pin 3
-  neuServo.write(winkel);               // Mittelstellung
+  myServo.attach(servoPin);            // Servo an Pin 3
+  myServo.write(winkel);               // Mittelstellung
 
   // Timer setup and start
   pmc_set_writeprotect(false);
@@ -96,7 +96,7 @@ void loop() {
 }  // end loop
 
 double gyroToWinkel(int wint) {
-  // Ermittelt aus wint = rate - vref die Winkelgeschwindigkeit 
+  // Ermittelt aus wint = rate - vref die Winkelgeschwindigkeit
   // in Grad pro Sekunde, Ermittlung des Faktors siehe Zeilen 20, 21
   double factor, omega;
   switch (welchesGyro) {
@@ -135,10 +135,11 @@ void setServo(int w) {
   }
   Serial.print("Setting Winkel on Master = ");
   Serial.println(winkel);                // Ausgabe zur Kontrolle
-  neuServo.write(winkel);                // Servo einstellen 
+  myServo.write(winkel);                 // Servo einstellen
 }
 
 int readGyro() {
+  // read analog values from Gyro and return raw data rate - vref
   int rate, vref;
   vref = analogRead(pinRef);            // read Analog input Ref
   rate = analogRead(welchesGyro);       // read Analog Input ZOUT
@@ -146,18 +147,18 @@ int readGyro() {
 }
 
 int checkGyro() {
-  // check Gyro on Slave, returns rate - vref 
+  // check Gyro on Slave, returns rate - vref
   int w = 0;
   byte result;
   byte c;
-//  Wire.beginTransmission(adrSlave);
-//  Wire.write(7);                        // send any byte
-//  result = Wire.endTransmission();      // stop transmitting
+  //  Wire.beginTransmission(adrSlave);
+  //  Wire.write(7);                        // send any byte
+  //  result = Wire.endTransmission();      // stop transmitting
   Wire.requestFrom(adrSlave, sizeof(int));
   for (int i = 0; i < sizeof(int); i++) {
-    c = Wire.read();
-    inBuffer[sizeof(int) - i] = c;
-  }  // end of for loop
+    c = Wire.read();                    // read byte, lowest first
+    inBuffer[sizeof(int) - i] = c;      // fill inBuffer from right to left
+  }  // end for loop
   w = (int) inBuffer;
   Serial.print("Master: ");
   Serial.println(w);
@@ -167,15 +168,14 @@ int checkGyro() {
 void slaveHandler(int howMany) {
   byte c;
   int w;
-//  c = Wire.read();                      // read one byte and ignore
+  //  c = Wire.read();                      // read one byte and ignore
   w = readGyro();
   Serial.print("Slave: ");
   Serial.println(w);
   for (int i = 0; i < sizeof(int); i++) {
-    c = w & 0xFF;                       // lowest byte first
-    Wire.write(c);
-    inBuffer[i] = c;
-    c = (w >> 8) & 0xFF;
+    c = w & 0xFF;                         // get lowest byte
+    Wire.write(c);                        // transmit
+    w = (w >> 8);                         // right shift for next byte
   }
 }
 
