@@ -1,4 +1,4 @@
-// Aufgabe 4.3, Stand von 2015-06-07
+// Aufgabe 4.3, Stand von 2015-06-10
 // Lösung von Michael Hufschmidt   michael@hufschmidt-web.de,
 //            Tim Welge            tw@ens-fiti.de
 //            Rania Wittenberg     rania_wittenberg@hotmail.com
@@ -86,7 +86,7 @@ void setup() {
     Wire.begin();
   } else {
     Wire.begin(adrSlave);
-    Wire.onReceive(slaveHandler);
+    Wire.onRequest(slaveHandler);
   }
   Serial.begin(9600);
 }
@@ -95,7 +95,7 @@ void loop() {
   // put your main code here, to run repeatedly:
 }  // end loop
 
-double gyroToWinkel(int wint) {
+double gyroToWinkel(double wint) {
   // Ermittelt aus wint = rate - vref die Winkelgeschwindigkeit
   // in Grad pro Sekunde, Ermittlung des Faktors siehe Zeilen 20, 21
   double factor, omega;
@@ -113,17 +113,19 @@ double gyroToWinkel(int wint) {
       factor = factor45;
       break;
   }
-  omega = factor * (double) wint;
+  omega = factor * wint;
   if (abs(omega) < schwelle) {
     omega = 0.0;
   }
   return omega;
 }
 
-void setServo(int w) {
+void setServo(double w) {
   // set Servo on Master according to w = rate - vref
   double omega;
   omega = gyroToWinkel(w);              // Winkelgeschwindigkeit Grad pro Sekunde
+  Serial.print("Omega  = ");
+  Serial.println(omega);
   winkel = winkel + int (0.1 * omega + 0.5); // increment 10x per second
   if (winkel < wmin) {
     // setBlink();
@@ -146,41 +148,43 @@ int readGyro() {
   return rate - vref;
 }
 
-int checkGyro() {
+double checkGyro() {
   // check Gyro on Slave, returns rate - vref
-  int w = 0;
+  byte c = 42;
   byte result;
-  byte c;
-  //  Wire.beginTransmission(adrSlave);
-  //  Wire.write(7);                        // send any byte
-  //  result = Wire.endTransmission();      // stop transmitting
-  Wire.requestFrom(adrSlave, sizeof(int));
-  for (int i = 0; i < sizeof(int); i++) {
-    c = Wire.read();                    // read byte, lowest first
-    inBuffer[sizeof(int) - i] = c;      // fill inBuffer from right to left
-  }  // end for loop
-  w = (int) inBuffer;
+  int count = 0;
+  double w = 0;
+  Wire.requestFrom(adrSlave, sizeof(double));
+  while (Wire.available()) {
+    inBuffer[count] = Wire.read();
+    count = (count + 1) % sizeof(double);
+   }
+  w = *(double *)&inBuffer;
+  // w = (double) inBuffer;
   Serial.print("Master: ");
   Serial.println(w);
   return w;
 }
 
-void slaveHandler(int howMany) {
+void slaveHandler() {
   byte c;
-  int w;
-  //  c = Wire.read();                      // read one byte and ignore
-  w = readGyro();
+  double w;
+  w = (double) readGyro();
   Serial.print("Slave: ");
   Serial.println(w);
-  for (int i = 0; i < sizeof(int); i++) {
-    c = w & 0xFF;                         // get lowest byte
-    Wire.write(c);                        // transmit
-    w = (w >> 8);                         // right shift for next byte
+  Wire.write((char*)&w, sizeof(double));
+}
+
+void identify() {
+  if (isMaster) {
+    Serial.println("I am Master");
+  } else {
+    Serial.println("I am Slave");
   }
 }
 
 void TC6_Handler() {
-  int w;                                // = rate - vref
+  double w;                                // = rate - vref
   uint32_t stat;
   stat = TC_GetStatus(TC2, dwChannel);
   timerValue = timerValue + 1;
@@ -191,7 +195,7 @@ void TC6_Handler() {
       setServo(w);
     }
   }
-  if ((timerValue % 1000) == 0) {       // every 1000 ms
-    //
+  if ((timerValue % 5000) == 0) {       // every 5000 ms
+    identify();
   }
 }
