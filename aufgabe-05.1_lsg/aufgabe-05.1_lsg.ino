@@ -1,4 +1,4 @@
-// Aufgabe 5.1, Stand von 2015-06-12
+// Aufgabe 5.1, Stand von 2015-06-15
 // Lösung von Michael Hufschmidt , 6436122 , michael@hufschmidt-web.de,
 //            Tim Welge          , 6541929 , tw@ens-fiti.de
 //            Rania Wittenberg   , xxxxxxx , rania_wittenberg@hotmail.com
@@ -6,22 +6,18 @@
 #include <SPI.h>
 
 // Pin Constants
-const int pinCS0 = 10;                  // SPI: Chip Select 0  <<< used here
-// const int pinCS1 = 4;                // SPI: Chip Select 1
-// const int pinCS2 = 52;               // SPI: Chip Select 2
-const int pinRST = 5;                   // SPI: RST = Reset
-const int pinDC = 6;                    // SPI: D/C = Data / Control
-const int pinLed = 13;                  // internal LED
+const int pinCS0 = 10;                      // SPI: Chip Select 0  <<< used here
+// const int pinCS1 = 4;                    // SPI: Chip Select 1
+// const int pinCS2 = 52;                   // SPI: Chip Select 2
+const int pinRST = 5;                       // SPI: RST = Reset
+const int pinDC = 6;                        // SPI: D/C = Data / Control
+const int pinLed = 13;                      // internal LED
 const int PIN_SDIN = 109;
 const int PIN_SCLK = 110;
 
+static const byte byteBits[] = {0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80};
 
-// Variables
-byte pixelBuffer[48][84];               // 48 rows x 84 cols
-byte displayBuffer[6][84];              // 6 banks (8 Bit each) x 84 cols
-
-static const byte ASCII[][5] =
-{
+static const byte ASCII[][5] = {            // charset 6x8_ascii_data.txt
   {0x00, 0x00, 0x00, 0x00, 0x00} // 20
   , {0x00, 0x00, 0x5f, 0x00, 0x00} // 21 !
   , {0x00, 0x07, 0x00, 0x07, 0x00} // 22 "
@@ -120,7 +116,9 @@ static const byte ASCII[][5] =
   , {0x78, 0x46, 0x41, 0x46, 0x78} // 7f →
 };
 
-// Ergänzungen von Michael, die mir heute noch eingefallen sind:
+// Variables
+byte displayBuffer[6][84];                  // 6 banks (8 Bit each) x 84 cols
+
 void setup() {
   // put your setup code here, to run once:
   Serial.begin(9600);
@@ -138,79 +136,72 @@ void setup() {
   digitalWrite(pinRST, HIGH);
 
   SPI.begin(pinCS0);
-  digitalWrite(pinDC, LOW);                    // enter command mode
-  SPI.setClockDivider(pinCS0, 84);             // 1 MHz
-
-  LcdWrite(LOW, 0x21 );  // LCD Extended Commands.
-  LcdWrite(LOW, 0xB1 );  // Set LCD Vop (Contrast).
-  LcdWrite(LOW, 0x04 );  // Set Temp coefficent. //0x04
-  LcdWrite(LOW, 0x14 );  // LCD bias mode 1:48. //0x13
-  LcdWrite(LOW, 0x20 );  // LCD Basic Commands
-  LcdWrite(LOW, 0x0C );  // LCD in normal mode.
-
-
-  SPI.transfer(pinDC, 0x21, SPI_CONTINUE);  // extended instrucion set
-  SPI.transfer(pinDC, 0x14, SPI_CONTINUE);  // set Bias
-  SPI.transfer(pinDC, 0xE0, SPI_CONTINUE);  // set Contrast
-  SPI.transfer(pinDC, 0x20, SPI_CONTINUE);  // set Display Mode Normal
-  SPI.transfer(pinDC, 0x0C);
-  digitalWrite(pinDC, HIGH);                 // enter data mode
-
+  digitalWrite(pinDC, LOW);                 // enter command mode
+  SPI.setClockDivider(pinCS0, 84);          // 84 MHz / 84 = 1 MHz
+  SPI.transfer(pinCS0, 0x21, SPI_CONTINUE); // extended instruction set: H = 1
+  SPI.transfer(pinCS0, 0x14, SPI_CONTINUE); // set Bias mode 1:48 // 0x13
+  SPI.transfer(pinCS0, 0xE0, SPI_CONTINUE); // set Contrast
+  SPI.transfer(pinCS0, 0x20, SPI_CONTINUE); // basic instruction set: H = 0
+  SPI.transfer(pinCS0, 0x0C, SPI_CONTINUE); // set Display Mode Normal
+  SPI.transfer(pinCS0, 0x00, SPI_LAST);     // NO-OP
+  digitalWrite(pinCS0, HIGH);               // enter data mode
 } // end setup
 
-void LcdClear()
-{
-  for (int index = 0; index < 84 * 48 / 8; index++)
-  {
-    LcdWrite(HIGH, 0x00);
+void loop() {
+  clearDisplayBuffer();
+  updateDisplay();
+  for (int x = 0; x < 84; x++) {
+    setColumnBitmap(x, 0xFF);
+    updateDisplay();
+    delay(200);
+  }
+  for (int x = 0; x < 84; x++) {
+    setColumnBitmap(x, 0x00);
+    updateDisplay();
+    delay(200);
   }
 }
 
-
-
-void LcdWrite(byte dc, byte data)
-{
-  digitalWrite(pinDC, dc);
-  digitalWrite(pinCS0, LOW);
-  shiftOut(PIN_SDIN, PIN_SCLK, MSBFIRST, data);
-  digitalWrite(pinCS0, HIGH);
+void setColumnBitmap(int x, byte bitmap) {
+  // activate column "x" in all 6 banks with the same bitmap
+  for (int bank = 0; bank < 6; bank++) {
+    displayBuffer[bank][x] = bitmap;
+  }
 }
 
-
-
-void loop() {
-
-
-
-
-
-
-
-}
-
-
-
-void setPixel(int x, int y, char value) {
-  // set a Pixel in the pixelBuffer value must be 0 or 1
-  pixelBuffer[x][y] = value;
-}
-
-
-void updateDisplay() {
-  // calculate displayBuffer from PixelBuffer see PCD8544 manual how to
-  // push displayBuffer to display see PCD8544 manual how to
-  byte b;                               // b is a bitmap of a bank-column
-  int line, bank, col;
-  digitalWrite(pinDC, HIGH);            // enter data mode
-  // The following requires much mode code !!!
-  for (bank = 0; bank < 6; bank++) {
-    b = 0;
-    for (line = 0; line < 48; line++) {
-      for (col = 0; col < 84; col++) {
-        // here you need to calculate the bits within c
-        b = pixelBuffer[line][col] ;  // it is not that easy!!!!
-        SPI.transfer(pinCS0, b);
-      }
+void clearDisplayBuffer() {
+  // clears the displayBuffer completely
+  for (int bank = 0; bank < 6; bank++) {
+    for (int x = 0; x < 84; x++) {
+      displayBuffer[bank][x] = 0;
     }
   }
+}
+
+void setPixel(int x, int y, char value) {
+  // set a Pixel in the displayBuffer. Params: x=[0:83], y=[0:47], value=[0:1]
+  int bank = y / 8 ;
+  int bitPos = y % 8;
+  if (value == 0) {                         // clear bit at bitPos
+    displayBuffer[bank][x] =  displayBuffer[bank][x] & (~byteBits[bitPos]);
+  } else {                                  // set bit at bitPos
+    displayBuffer[bank][x] =  displayBuffer[bank][x] | byteBits[bitPos];
+  }
+}
+
+void updateDisplay() {
+  // push displayBuffer to display see PCD8544 manual how to
+  byte b;                                   // b is a bitmap of a bank-column
+  digitalWrite(pinDC, LOW);                 // enter command mode
+  SPI.transfer(pinCS0, 0x20, SPI_CONTINUE); // ensure basic instrucion set: H = 0
+  SPI.transfer(pinCS0, 0x40, SPI_CONTINUE); // set Y-address to 0
+  SPI.transfer(pinCS0, 0x80, SPI_CONTINUE); // set X-address to 0
+  digitalWrite(pinDC, HIGH);                // enter data mode
+  for (int bank = 0; bank < 6; bank++) {
+    for (int x = 0; x < 84; x++) {
+      b = displayBuffer[bank][x] ;
+      SPI.transfer(pinCS0, b, SPI_CONTINUE);
+    }
+  }
+  SPI.transfer(pinCS0, 0x00, SPI_LAST);     // NO-OP
 }
