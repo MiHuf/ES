@@ -25,13 +25,10 @@ void setup() {
   // put your setup code here, to run once:
   Serial.begin(9600);
   byte res;
-  pinMode(pinCS0, OUTPUT);
   pinMode(pinDC, OUTPUT);
   pinMode(pinRST, OUTPUT);
   pinMode(pinLcdLed, OUTPUT);
   pinMode(pinLed, OUTPUT);
-  pinMode(pinMosi, OUTPUT);
-  pinMode(pinClock, OUTPUT);
 
   digitalWrite(pinRST, HIGH);               // reset
   digitalWrite(pinRST, LOW);                // reset
@@ -42,27 +39,35 @@ void setup() {
   SPI.begin(pinCS0);
   digitalWrite(pinDC, LOW);                 // enter command mode
   SPI.setClockDivider(pinCS0, 84);          // 84 MHz / 84 = 1 MHz
-  SPI.transfer(pinCS0, 0x21, SPI_CONTINUE); // extended instruction set: H = 1
-  SPI.transfer(pinCS0, 0x14, SPI_CONTINUE); // set Bias mode 1:48 // 0x13
-  SPI.transfer(pinCS0, 0xE0, SPI_CONTINUE); // set Contrast
-  SPI.transfer(pinCS0, 0x20, SPI_CONTINUE); // basic instruction set: H = 0
-  SPI.transfer(pinCS0, 0x0C, SPI_CONTINUE); // set Display Mode Normal
-  SPI.transfer(pinCS0, 0x00, SPI_LAST);     // NO-OP
-  digitalWrite(pinCS0, HIGH);               // enter data mode
+  SPI.transfer(pinCS0, 0x21);               // extended instruction set: H = 1
+  SPI.transfer(pinCS0, 0x14);               // set Bias mode 1:48 // 0x13
+  SPI.transfer(pinCS0, 0xB0);               // set Contrast
+  SPI.transfer(pinCS0, 0x20);               // basic instruction set: H = 0
+  SPI.transfer(pinCS0, 0x0C);               // set Display Mode Normal
+  // test();
 } // end setup
 
+void test() {
+  // testing the display
+  for (int i = 0; i < 32; i++) {
+    SPI.transfer(pinCS0, 0xFF);
+  }
+  delay(1000);
+}
+
 void loop() {
+  // return;
   clearDisplayBuffer();
   updateDisplay();
   for (int x = 0; x < 84; x++) {
     setColumnBitmap(x, 0xFF);
     updateDisplay();
-    delay(200);
+    delay(20);
   }
   for (int x = 0; x < 84; x++) {
     setColumnBitmap(x, 0x00);
     updateDisplay();
-    delay(200);
+    delay(20);
   }
 }
 
@@ -108,18 +113,14 @@ void updateDisplay() {
   // push displayBuffer to display see PCD8544 manual how to
   byte b;                                   // b is a bitmap of a bank-column
   digitalWrite(pinDC, LOW);                 // enter command mode
-  SPI.transfer(pinCS0, 0x20, SPI_CONTINUE); // ensure basic instrucion set: H = 0
-  SPI.transfer(pinCS0, 0x80, SPI_CONTINUE); // set X-address to 0
-  SPI.transfer(pinCS0, 0x40, SPI_CONTINUE); // set Y-address to 0
+  SPI.transfer(pinCS0, 0x20);               // ensure basic instrucion set: H = 0
+  SPI.transfer(pinCS0, 0x80);               // set X-address to 0
+  SPI.transfer(pinCS0, 0x40);               // set Y-address to 0
   digitalWrite(pinDC, HIGH);                // enter data mode
-  for (int x = 0; x < 84; x++) {
-    for (int bank = 0; bank < 6; bank++) {
+  for (int bank = 0; bank < 6; bank++) {
+    for (int x = 0; x < 84; x++) {
       b = displayBuffer[x][bank];
-      if ((x == 83) && (bank == 5)) {
-        SPI.transfer(pinCS0, b, SPI_LAST);
-      } else {
-        SPI.transfer(pinCS0, b, SPI_CONTINUE);
-      }
+      SPI.transfer(pinCS0, b);
     }
   }
 }
