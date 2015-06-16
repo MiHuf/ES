@@ -138,10 +138,10 @@ void setup() {
   SPI.begin(pinCS0);
   digitalWrite(pinDC, LOW);                 // enter command mode
   SPI.setClockDivider(pinCS0, 84);          // 84 MHz / 84 = 1 MHz
-  SPI.transfer(pinCS0, 0x21);               // extended instruction set: H = 1
+  SPI.transfer(pinCS0, 0x21);               // extended instruction set: H = 1, V = 0
   SPI.transfer(pinCS0, 0x14);               // set Bias mode 1:48 // 0x13
-  SPI.transfer(pinCS0, 0xB0);               // set Contrast
-  SPI.transfer(pinCS0, 0x20);               // basic instruction set: H = 0
+  SPI.transfer(pinCS0, 0xB0);               // set VOP / Contrast
+  SPI.transfer(pinCS0, 0x20);               // basic instruction set: H = 0, V = 0
   SPI.transfer(pinCS0, 0x0C);               // set Display Mode Normal
   // test();
 } // end setup
@@ -200,7 +200,8 @@ void updateDisplay() {
   // push displayBuffer to display see PCD8544 manual how to
   byte b;                                   // b is a bitmap of a bank-column
   digitalWrite(pinDC, LOW);                 // enter command mode
-  SPI.transfer(pinCS0, 0x20);               // ensure basic instrucion set: H = 0
+  SPI.transfer(pinCS0, 0x20);               // basic instrucion set: H = 0, V = 0
+                                            // V = 0 means horizontal adressing
   SPI.transfer(pinCS0, 0x80);               // set X-address to 0
   SPI.transfer(pinCS0, 0x40);               // set Y-address to 0
   digitalWrite(pinDC, HIGH);                // enter data mode
