@@ -1,4 +1,4 @@
-// Aufgabe 5.1, Stand von 2015-06-15
+// Aufgabe 5.1, Stand von 2015-06-16
 // Lösung von Michael Hufschmidt , 6436122 , michael@hufschmidt-web.de,
 //            Tim Welge          , 6541929 , tw@ens-fiti.de
 //            Rania Wittenberg   , xxxxxxx , rania_wittenberg@hotmail.com
@@ -9,11 +9,11 @@
 const int pinCS0 = 10;                      // SPI: Chip Select 0  <<< used here
 // const int pinCS1 = 4;                    // SPI: Chip Select 1
 // const int pinCS2 = 52;                   // SPI: Chip Select 2
-const int pinRST = 5;                       // SPI: RST = Reset
-const int pinDC = 6;                        // SPI: D/C = Data / Control
+const int pinDC = 5;                        // SPI: D/C = Data / Control
+const int pinRST = 6;                       // SPI: RST = Reset
 const int pinLed = 13;                      // internal LED
-const int PIN_SDIN = 109;
-const int PIN_SCLK = 110;
+const int PIN_SDIN = 109;                   // SPI-Block: MOSI
+const int PIN_SCLK = 110;                   // SPI-Block: Clock
 
 static const byte byteBits[] = {0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80};
 
@@ -117,7 +117,7 @@ static const byte ASCII[][5] = {            // charset 6x8_ascii_data.txt
 };
 
 // Variables
-byte displayBuffer[6][84];                  // 6 banks (8 Bit each) x 84 cols
+byte displayBuffer[84][6];                  // x = 84 cols, y = 6 banks (8 Bit each)
 
 void setup() {
   // put your setup code here, to run once:
@@ -130,10 +130,10 @@ void setup() {
   pinMode(PIN_SDIN, OUTPUT);
   pinMode(PIN_SCLK, OUTPUT);
 
-  digitalWrite(pinRST, HIGH);
-  digitalWrite(pinRST, LOW);
-  delay(500);
-  digitalWrite(pinRST, HIGH);
+  digitalWrite(pinRST, HIGH);               // reset
+  digitalWrite(pinRST, LOW);                // reset
+  delay(500);                               // for 500 ms
+  digitalWrite(pinRST, HIGH);               // end reset
 
   SPI.begin(pinCS0);
   digitalWrite(pinDC, LOW);                 // enter command mode
@@ -164,16 +164,25 @@ void loop() {
 
 void setColumnBitmap(int x, byte bitmap) {
   // activate column "x" in all 6 banks with the same bitmap
+  x = constrain(x, 0, 83);                  // limit x-values
   for (int bank = 0; bank < 6; bank++) {
-    displayBuffer[bank][x] = bitmap;
+    setBankBitmap(x, bank, bitmap);
   }
 }
 
+void setBankBitmap(int x, int bank, byte bitmap) {
+  // activate column "x" in bank "bank" with bitmap "bitmap"
+  x = constrain(x, 0, 83);                  // limit x-values
+  bank = constrain(bank, 0, 5);             // limit bank-values
+  displayBuffer[x][bank] = bitmap;
+}
+
+
 void clearDisplayBuffer() {
   // clears the displayBuffer completely
-  for (int bank = 0; bank < 6; bank++) {
-    for (int x = 0; x < 84; x++) {
-      displayBuffer[bank][x] = 0;
+  for (int x = 0; x < 84; x++) {
+    for (int bank = 0; bank < 6; bank++) {
+      displayBuffer[x][bank] = 0;
     }
   }
 }
@@ -182,10 +191,12 @@ void setPixel(int x, int y, char value) {
   // set a Pixel in the displayBuffer. Params: x=[0:83], y=[0:47], value=[0:1]
   int bank = y / 8 ;
   int bitPos = y % 8;
+  x = constrain(x, 0, 83);                  // limit x-values
+  bank = constrain(bank, 0, 5);             // limit bank-values
   if (value == 0) {                         // clear bit at bitPos
-    displayBuffer[bank][x] =  displayBuffer[bank][x] & (~byteBits[bitPos]);
+    displayBuffer[x][bank] =  displayBuffer[x][bank] & (~byteBits[bitPos]);
   } else {                                  // set bit at bitPos
-    displayBuffer[bank][x] =  displayBuffer[bank][x] | byteBits[bitPos];
+    displayBuffer[x][bank] =  displayBuffer[x][bank] | byteBits[bitPos];
   }
 }
 
@@ -197,9 +208,9 @@ void updateDisplay() {
   SPI.transfer(pinCS0, 0x40, SPI_CONTINUE); // set Y-address to 0
   SPI.transfer(pinCS0, 0x80, SPI_CONTINUE); // set X-address to 0
   digitalWrite(pinDC, HIGH);                // enter data mode
-  for (int bank = 0; bank < 6; bank++) {
-    for (int x = 0; x < 84; x++) {
-      b = displayBuffer[bank][x] ;
+  for (int x = 0; x < 84; x++) {
+    for (int bank = 0; bank < 6; bank++) {
+      b = displayBuffer[x][bank];
       SPI.transfer(pinCS0, b, SPI_CONTINUE);
     }
   }
