@@ -1,4 +1,4 @@
-// Aufgabe 5.3, Stand von 2015-06-10
+// Aufgabe 5.3, Stand von 2015-06-16
 // Lösung von Michael Hufschmidt , 6436122 , michael@hufschmidt-web.de,
 //            Tim Welge          , 6541929 , tw@ens-fiti.de
 //            Rania Wittenberg   , xxxxxxx , rania_wittenberg@hotmail.com
@@ -6,67 +6,219 @@
 #include <SPI.h>
 
 // Pin Constants
-const int pinCS0 = 10;                  // SPI: Chip Select 0  <<< used here
-// const int pinCS1 = 4;                // SPI: Chip Select 1
-// const int pinCS2 = 52;               // SPI: Chip Select 2
-const int pinRST = 5;                   // SPI: RST = Reset
-const int pinDC = 6;                    // SPI: D/C = Data / Control
-const int pinLed = 13;                  // internal LED
+const int pinCS0 = 10;                      // SPI: Chip Select 0  <<< used here
+// const int pinCS1 = 4;                    // SPI: Chip Select 1
+// const int pinCS2 = 52;                   // SPI: Chip Select 2
+const int pinDC = 5;                        // SPI: D/C = Data / Control
+const int pinRST = 6;                       // SPI: RST = Reset
+const int pinLcdLed = 4;                    // LED on LCD
+const int pinLed = 13;                      // internal LED
+const int pinMosi = 109;                    // SPI-Block: MOSI
+const int pinClock = 110;                   // SPI-Block: Clock
+
+static const byte byteBits[] = {0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80};
+
+static const byte ASCII[][5] = {            // charset 6x8_ascii_data.txt
+  {0x00, 0x00, 0x00, 0x00, 0x00} // 20
+  , {0x00, 0x00, 0x5f, 0x00, 0x00} // 21 !
+  , {0x00, 0x07, 0x00, 0x07, 0x00} // 22 "
+  , {0x14, 0x7f, 0x14, 0x7f, 0x14} // 23 #
+  , {0x24, 0x2a, 0x7f, 0x2a, 0x12} // 24 $
+  , {0x23, 0x13, 0x08, 0x64, 0x62} // 25 %
+  , {0x36, 0x49, 0x55, 0x22, 0x50} // 26 &
+  , {0x00, 0x05, 0x03, 0x00, 0x00} // 27 '
+  , {0x00, 0x1c, 0x22, 0x41, 0x00} // 28 (
+  , {0x00, 0x41, 0x22, 0x1c, 0x00} // 29 )
+  , {0x14, 0x08, 0x3e, 0x08, 0x14} // 2a *
+  , {0x08, 0x08, 0x3e, 0x08, 0x08} // 2b +
+  , {0x00, 0x50, 0x30, 0x00, 0x00} // 2c ,
+  , {0x08, 0x08, 0x08, 0x08, 0x08} // 2d -
+  , {0x00, 0x60, 0x60, 0x00, 0x00} // 2e .
+  , {0x20, 0x10, 0x08, 0x04, 0x02} // 2f /
+  , {0x3e, 0x51, 0x49, 0x45, 0x3e} // 30 0
+  , {0x00, 0x42, 0x7f, 0x40, 0x00} // 31 1
+  , {0x42, 0x61, 0x51, 0x49, 0x46} // 32 2
+  , {0x21, 0x41, 0x45, 0x4b, 0x31} // 33 3
+  , {0x18, 0x14, 0x12, 0x7f, 0x10} // 34 4
+  , {0x27, 0x45, 0x45, 0x45, 0x39} // 35 5
+  , {0x3c, 0x4a, 0x49, 0x49, 0x30} // 36 6
+  , {0x01, 0x71, 0x09, 0x05, 0x03} // 37 7
+  , {0x36, 0x49, 0x49, 0x49, 0x36} // 38 8
+  , {0x06, 0x49, 0x49, 0x29, 0x1e} // 39 9
+  , {0x00, 0x36, 0x36, 0x00, 0x00} // 3a :
+  , {0x00, 0x56, 0x36, 0x00, 0x00} // 3b ;
+  , {0x08, 0x14, 0x22, 0x41, 0x00} // 3c <
+  , {0x14, 0x14, 0x14, 0x14, 0x14} // 3d =
+  , {0x00, 0x41, 0x22, 0x14, 0x08} // 3e >
+  , {0x02, 0x01, 0x51, 0x09, 0x06} // 3f ?
+  , {0x32, 0x49, 0x79, 0x41, 0x3e} // 40 @
+  , {0x7e, 0x11, 0x11, 0x11, 0x7e} // 41 A
+  , {0x7f, 0x49, 0x49, 0x49, 0x36} // 42 B
+  , {0x3e, 0x41, 0x41, 0x41, 0x22} // 43 C
+  , {0x7f, 0x41, 0x41, 0x22, 0x1c} // 44 D
+  , {0x7f, 0x49, 0x49, 0x49, 0x41} // 45 E
+  , {0x7f, 0x09, 0x09, 0x09, 0x01} // 46 F
+  , {0x3e, 0x41, 0x49, 0x49, 0x7a} // 47 G
+  , {0x7f, 0x08, 0x08, 0x08, 0x7f} // 48 H
+  , {0x00, 0x41, 0x7f, 0x41, 0x00} // 49 I
+  , {0x20, 0x40, 0x41, 0x3f, 0x01} // 4a J
+  , {0x7f, 0x08, 0x14, 0x22, 0x41} // 4b K
+  , {0x7f, 0x40, 0x40, 0x40, 0x40} // 4c L
+  , {0x7f, 0x02, 0x0c, 0x02, 0x7f} // 4d M
+  , {0x7f, 0x04, 0x08, 0x10, 0x7f} // 4e N
+  , {0x3e, 0x41, 0x41, 0x41, 0x3e} // 4f O
+  , {0x7f, 0x09, 0x09, 0x09, 0x06} // 50 P
+  , {0x3e, 0x41, 0x51, 0x21, 0x5e} // 51 Q
+  , {0x7f, 0x09, 0x19, 0x29, 0x46} // 52 R
+  , {0x46, 0x49, 0x49, 0x49, 0x31} // 53 S
+  , {0x01, 0x01, 0x7f, 0x01, 0x01} // 54 T
+  , {0x3f, 0x40, 0x40, 0x40, 0x3f} // 55 U
+  , {0x1f, 0x20, 0x40, 0x20, 0x1f} // 56 V
+  , {0x3f, 0x40, 0x38, 0x40, 0x3f} // 57 W
+  , {0x63, 0x14, 0x08, 0x14, 0x63} // 58 X
+  , {0x07, 0x08, 0x70, 0x08, 0x07} // 59 Y
+  , {0x61, 0x51, 0x49, 0x45, 0x43} // 5a Z
+  , {0x00, 0x7f, 0x41, 0x41, 0x00} // 5b [
+  , {0x02, 0x04, 0x08, 0x10, 0x20} // 5c ¥
+  , {0x00, 0x41, 0x41, 0x7f, 0x00} // 5d ]
+  , {0x04, 0x02, 0x01, 0x02, 0x04} // 5e ^
+  , {0x40, 0x40, 0x40, 0x40, 0x40} // 5f _
+  , {0x00, 0x01, 0x02, 0x04, 0x00} // 60 `
+  , {0x20, 0x54, 0x54, 0x54, 0x78} // 61 a
+  , {0x7f, 0x48, 0x44, 0x44, 0x38} // 62 b
+  , {0x38, 0x44, 0x44, 0x44, 0x20} // 63 c
+  , {0x38, 0x44, 0x44, 0x48, 0x7f} // 64 d
+  , {0x38, 0x54, 0x54, 0x54, 0x18} // 65 e
+  , {0x08, 0x7e, 0x09, 0x01, 0x02} // 66 f
+  , {0x0c, 0x52, 0x52, 0x52, 0x3e} // 67 g
+  , {0x7f, 0x08, 0x04, 0x04, 0x78} // 68 h
+  , {0x00, 0x44, 0x7d, 0x40, 0x00} // 69 i
+  , {0x20, 0x40, 0x44, 0x3d, 0x00} // 6a j
+  , {0x7f, 0x10, 0x28, 0x44, 0x00} // 6b k
+  , {0x00, 0x41, 0x7f, 0x40, 0x00} // 6c l
+  , {0x7c, 0x04, 0x18, 0x04, 0x78} // 6d m
+  , {0x7c, 0x08, 0x04, 0x04, 0x78} // 6e n
+  , {0x38, 0x44, 0x44, 0x44, 0x38} // 6f o
+  , {0x7c, 0x14, 0x14, 0x14, 0x08} // 70 p
+  , {0x08, 0x14, 0x14, 0x18, 0x7c} // 71 q
+  , {0x7c, 0x08, 0x04, 0x04, 0x08} // 72 r
+  , {0x48, 0x54, 0x54, 0x54, 0x20} // 73 s
+  , {0x04, 0x3f, 0x44, 0x40, 0x20} // 74 t
+  , {0x3c, 0x40, 0x40, 0x20, 0x7c} // 75 u
+  , {0x1c, 0x20, 0x40, 0x20, 0x1c} // 76 v
+  , {0x3c, 0x40, 0x30, 0x40, 0x3c} // 77 w
+  , {0x44, 0x28, 0x10, 0x28, 0x44} // 78 x
+  , {0x0c, 0x50, 0x50, 0x50, 0x3c} // 79 y
+  , {0x44, 0x64, 0x54, 0x4c, 0x44} // 7a z
+  , {0x00, 0x08, 0x36, 0x41, 0x00} // 7b {
+  , {0x00, 0x00, 0x7f, 0x00, 0x00} // 7c |
+  , {0x00, 0x41, 0x36, 0x08, 0x00} // 7d }
+  , {0x10, 0x08, 0x08, 0x10, 0x08} // 7e ←
+  , {0x78, 0x46, 0x41, 0x46, 0x78} // 7f →
+};
 
 // Variables
-byte pixelBuffer[48][84];               // 48 rows x 84 cols
-byte displayBuffer[6][84];              // 6 banks (8 Bit each) x 84 cols
+byte displayBuffer[84][6];                  // x = 84 cols, y = 6 banks (8 Bit each)
 
-// Ergänzungen von Michael, die mir heute noch eingefallen sind:
 void setup() {
   // put your setup code here, to run once:
-  byte res;
-  pinMode(pinLed, OUTPUT);
-  pinMode(pinRST, OUTPUT);
-  pinMode(pinDC, OUTPUT);
   Serial.begin(9600);
-  digitalWrite(pinRST, HIGH);
-  digitalWrite(pinRST, LOW);
-  delay(500);
-  digitalWrite(pinRST, HIGH);
-  SPI.begin(pinCS0);
-  digitalWrite(pinDC, LOW);                    // enter command mode
-  SPI.setClockDivider(pinCS0, 84);             // 1 MHz
-  res = SPI.transfer(10, 0x21, SPI_CONTINUE);  // extended instrucion set
-  res = SPI.transfer(10, 0x14, SPI_CONTINUE);  // set Bias
-  res = SPI.transfer(10, 0xE0, SPI_CONTINUE);  // set Contrast
-  res = SPI.transfer(10, 0x20, SPI_CONTINUE);  // set Display Mode Normal
-  res = SPI.transfer(10, 0x0C);
-  digitalWrite(pinDC, HIGH);                   // enter data mode
+  byte res;
+  pinMode(pinCS0, OUTPUT);
+  pinMode(pinDC, OUTPUT);
+  pinMode(pinRST, OUTPUT);
+  pinMode(pinLcdLed, OUTPUT);
+  pinMode(pinLed, OUTPUT);
+  pinMode(pinMosi, OUTPUT);
+  pinMode(pinClock, OUTPUT);
 
+  digitalWrite(pinRST, HIGH);               // reset
+  digitalWrite(pinRST, LOW);                // reset
+  delay(500);                               // for 500 ms
+  digitalWrite(pinRST, HIGH);               // end reset
+  analogWrite(pinLcdLed, 128);              // switch LED on LCD
+
+  SPI.begin(pinCS0);
+  digitalWrite(pinDC, LOW);                 // enter command mode
+  SPI.setClockDivider(pinCS0, 84);          // 84 MHz / 84 = 1 MHz
+  SPI.transfer(pinCS0, 0x21, SPI_CONTINUE); // extended instruction set: H = 1
+  SPI.transfer(pinCS0, 0x14, SPI_CONTINUE); // set Bias mode 1:48 // 0x13
+  SPI.transfer(pinCS0, 0xE0, SPI_CONTINUE); // set Contrast
+  SPI.transfer(pinCS0, 0x20, SPI_CONTINUE); // basic instruction set: H = 0
+  SPI.transfer(pinCS0, 0x0C, SPI_CONTINUE); // set Display Mode Normal
+  SPI.transfer(pinCS0, 0x00, SPI_LAST);     // NO-OP
+  digitalWrite(pinCS0, HIGH);               // enter data mode
 } // end setup
 
 void loop() {
-  // put your main code here, to run repeatedly:
-
-}  // end loop
-
-void setPixel(int x, int y, char value) {
-  // set a Pixel in the pixelBuffer value must be 0 or 1
-  pixelBuffer[x][y] = value;
+  clearDisplayBuffer();
+  updateDisplay();
+  for (int x = 0; x < 84; x++) {
+    setColumnBitmap(x, 0xFF);
+    updateDisplay();
+    delay(200);
+  }
+  for (int x = 0; x < 84; x++) {
+    setColumnBitmap(x, 0x00);
+    updateDisplay();
+    delay(200);
+  }
 }
 
-void updateDisplay() {
-  // calculate displayBuffer from PixelBuffer see PCD8544 manual how to
-  // push displayBuffer to display see PCD8544 manual how to
-  byte b;                               // b is a bitmap of a bank-column
-  int line, bank, col;
-  digitalWrite(pinDC, HIGH);            // enter data mode
-  // The following requires much mode code !!!
-  for (bank = 0; bank < 6; bank++) {
-    b = 0;
-    for (line = 0; line < 48; line++) {
-      for (col = 0; col < 84; col++) {
-        // here you need to calculate the bits within c
-        b = pixelBuffer[line][col] ;  // it is not that easy!!!!
-        SPI.transfer(pinCS0, b);
-      }
+void setColumnBitmap(int x, byte bitmap) {
+  // activate column "x" in all 6 banks with the same bitmap
+  x = constrain(x, 0, 83);                  // limit x-values
+  for (int bank = 0; bank < 6; bank++) {
+    setBankBitmap(x, bank, bitmap);
+  }
+}
+
+void setBankBitmap(int x, int bank, byte bitmap) {
+  // activate column "x" in bank "bank" with bitmap "bitmap"
+  x = constrain(x, 0, 83);                  // limit x-values
+  bank = constrain(bank, 0, 5);             // limit bank-values
+  displayBuffer[x][bank] = bitmap;
+}
+
+
+void clearDisplayBuffer() {
+  // clears the displayBuffer completely
+  for (int x = 0; x < 84; x++) {
+    for (int bank = 0; bank < 6; bank++) {
+      displayBuffer[x][bank] = 0;
     }
   }
 }
 
+void setPixel(int x, int y, char value) {
+  // set a Pixel in the displayBuffer. Params: x=[0:83], y=[0:47], value=[0:1]
+  int bank = y / 8 ;
+  int bitPos = y % 8;
+  x = constrain(x, 0, 83);                  // limit x-values
+  bank = constrain(bank, 0, 5);             // limit bank-values
+  if (value == 0) {                         // clear bit at bitPos
+    displayBuffer[x][bank] =  displayBuffer[x][bank] & (~byteBits[bitPos]);
+  } else {                                  // set bit at bitPos
+    displayBuffer[x][bank] =  displayBuffer[x][bank] | byteBits[bitPos];
+  }
+}
+
+void updateDisplay() {
+  // push displayBuffer to display see PCD8544 manual how to
+  byte b;                                   // b is a bitmap of a bank-column
+  digitalWrite(pinDC, LOW);                 // enter command mode
+  SPI.transfer(pinCS0, 0x20, SPI_CONTINUE); // ensure basic instrucion set: H = 0
+  SPI.transfer(pinCS0, 0x80, SPI_CONTINUE); // set X-address to 0
+  SPI.transfer(pinCS0, 0x40, SPI_CONTINUE); // set Y-address to 0
+  digitalWrite(pinDC, HIGH);                // enter data mode
+  for (int x = 0; x < 84; x++) {
+    for (int bank = 0; bank < 6; bank++) {
+      b = displayBuffer[x][bank];
+      if ((x == 83) && (bank == 5)) {
+        SPI.transfer(pinCS0, b, SPI_LAST);
+      } else {
+        SPI.transfer(pinCS0, b, SPI_CONTINUE);
+      }
+    }
+  }
+}
