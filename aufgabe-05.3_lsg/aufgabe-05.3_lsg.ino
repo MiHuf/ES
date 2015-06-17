@@ -1,7 +1,7 @@
-// Aufgabe 5.3, Stand von 2015-06-16
+// Aufgabe 5.3, Stand von 2015-06-17
 // Lösung von Michael Hufschmidt , 6436122 , michael@hufschmidt-web.de,
 //            Tim Welge          , 6541929 , tw@ens-fiti.de
-//            Rania Wittenberg   , xxxxxxx , rania_wittenberg@hotmail.com
+//            Rania Wittenberg   , 6059892 , rania_wittenberg@hotmail.com
 
 #include <SPI.h>
 
@@ -139,7 +139,8 @@ void setup() {
   digitalWrite(pinDC, LOW);                 // enter command mode
   SPI.setClockDivider(pinCS0, 84);          // 84 MHz / 84 = 1 MHz
   SPI.transfer(pinCS0, 0x21);               // extended instruction set: H = 1, V = 0
-  SPI.transfer(pinCS0, 0x14);               // set Bias mode 1:48 // 0x13
+  SPI.transfer(pinCS0, 0x40);               // set TC 00
+  SPI.transfer(pinCS0, 0x14);               // set Bias mode = 4: 1:40 / 1:34
   SPI.transfer(pinCS0, 0xB0);               // set VOP / Contrast
   SPI.transfer(pinCS0, 0x20);               // basic instruction set: H = 0, V = 0
   SPI.transfer(pinCS0, 0x0C);               // set Display Mode Normal
