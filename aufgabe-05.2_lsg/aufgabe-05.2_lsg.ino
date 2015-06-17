@@ -17,8 +17,7 @@ const int pinMosi = 109;                    // SPI-Block: MOSI
 const int pinClock = 110;                   // SPI-Block: Clock
 
 static const byte byteBits[] = {0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80};
-
-static const byte ASCII[][5] = {            
+      
 unsigned char font[95][6] = {               // charset 6x8_ascii_data.txt
 { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 }, // space
 { 0x00, 0x00, 0x5F, 0x00, 0x00, 0x00 }, // !
@@ -156,7 +155,25 @@ void test() {
 }
 
 void loop() {
- // ToDo
+  clearDisplayBuffer();
+  printChar(39, 20, '@');
+  updateDisplay();
+}
+
+int printChar(int x, int y, char value) {
+  // Druckt das Zeichen vlaue an der Stelle x, y (linke obere Ecke)
+  int f =  value - 0x20;
+  byte b;
+  if ((x + 6 >= 85) | (y + 8 >= 48)) {
+    return -1;
+  }
+  for (int fcol = 0; fcol < 5; fcol++) {
+    b = font[f][fcol];
+    for (int frow = 0; frow < 8; frow++) {
+      setPixel(x + fcol, y + frow, b & byteBits[frow]);
+    }
+  }
+  return 0;
 }
 
 void setColumnBitmap(int x, byte bitmap) {
