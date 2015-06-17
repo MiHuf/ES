@@ -188,7 +188,7 @@ int printChar(int x, int y, char value) {
   // Druckt das Zeichen vlaue an der Stelle x, y (linke obere Ecke)
   int f =  value - 0x20;
   byte b;
-  if ((x + 6 >= 85) | (y + 8 >= 48)) {
+  if ((x + 6 >= 84) | (y + 8 >= 48)) {
     return -1;
   }
   for (int fcol = 0; fcol < 5; fcol++) {
