@@ -1,4 +1,4 @@
-// Aufgabe 6.1, Stand von 2015-06-24
+// Aufgabe 6.1, Stand von 2015-06-26
 // Lösung von Michael Hufschmidt , 6436122 , michael@hufschmidt-web.de,
 //            Tim Welge          , 6541929 , tw@ens-fiti.de
 //            Rania Wittenberg   , 6059892 , rania_wittenberg@hotmail.com
@@ -12,7 +12,7 @@ const int pinCS1 = 4;                       // SPI: SCE Chip Select 1  <<< for W
 // const int pinCS2 = 52;                   // SPI: SCE Chip Select 2
 const int pinDC = 5;                        // SPI: D/C = Data / Control
 const int pinRST = 6;                       // RST = Reset LCD-Display
-const int pinLcdLed = 4;                    // LED on LCD
+const int pinLcdLed = 3;                    // LED on LCD
 const int pinLed = 13;                      // internal LED
 const int pinMosi = 109;                    // SPI-Block: MOSI
 const int pinMiso = 108;                    // SPI-Block: MISO
@@ -117,6 +117,7 @@ unsigned char font[95][6] = {               // charset 6x8_ascii_data.txt
   { 0x00, 0x41, 0x36, 0x08, 0x00, 0x00 },   // }
   { 0x10, 0x08, 0x08, 0x10, 0x08, 0x00 }    // ~
 };
+const String s0 = "Hallo Welt";
 
 // Variables
 byte displayBuffer[84][6];                  // x = 84 cols, y = 6 banks (8 Bit each)
@@ -124,14 +125,16 @@ const int commandLen = 80;                  // size of line buffer
 char lineBuffer[commandLen];                // input line buffer = command buffer
 int linePos = 0;
 bool commandReady = false;
-const int dataLen = 1024;                   // size of data buffer
-char dataBuffer[dataLen];                   // data buffer (.txt or .img)
+const int dataSize = 1024;                  // size of data buffer
+char dataBuffer[dataSize];                  // data buffer (.txt or .img)
+unsigned long dataLen;                      // aktual file size
 int dataPos = 0;
 
 void setup() {
   // put your setup code here, to run once:
+  bool sdOK = false;
+
   Serial.begin(9600);
-  byte res;
   pinMode(pinDC, OUTPUT);
   pinMode(pinRST, OUTPUT);
   pinMode(pinLcdLed, OUTPUT);
@@ -141,7 +144,7 @@ void setup() {
   digitalWrite(pinRST, LOW);                // reset
   delay(500);                               // for 500 ms
   digitalWrite(pinRST, HIGH);               // end reset
-  analogWrite(pinLcdLed, 64);               // switch LED on LCD
+  analogWrite(pinLcdLed, 128);               // switch LED on LCD
 
   SPI.begin(pinCS0);
   digitalWrite(pinDC, LOW);                 // enter command mode
@@ -149,13 +152,27 @@ void setup() {
   SPI.transfer(pinCS0, 0x21);               // extended instruction set: H = 1, V = 0
   SPI.transfer(pinCS0, 0x40);               // set TC 00
   SPI.transfer(pinCS0, 0x14);               // set Bias mode = 4: 1:40 / 1:34
-  SPI.transfer(pinCS0, 0xB0);               // set VOP / Contrast
+  SPI.transfer(pinCS0, 0xE0);               // set VOP / Contrast : 0x80 ... 0xFF
   SPI.transfer(pinCS0, 0x20);               // basic instruction set: H = 0, V = 0
   SPI.transfer(pinCS0, 0x0C);               // set Display Mode Normal
 
-  clearDisplayBuffer();                     //
-  updateDisplay();                          //
+  sdOK = SD.begin(pinCS1);                  // SD-Card
+  if (sdOK) {
+    Serial.println("Serial Card OK");
+  } else {
+    Serial.println("Serial Card NOT OK");
+  }
 
+  clearDisplayBuffer();                     //
+  s0.toCharArray(dataBuffer, s0.length() + 1);
+  printCharsLine(3, 0, s0.length() - 1, dataBuffer);
+  updateDisplay();                          //
+  clearDisplayBuffer();
+
+  File file = SD.open("/");
+
+  printDirectory(file, 8);
+  //
 } // end setup
 
 void loop() {
@@ -167,14 +184,80 @@ void loop() {
   }
 }
 
+void printDirectory(File dir, int numTabs) {
+  while (true) {
+    File entry =  dir.openNextFile();
+    if (! entry) {
+      // no more files
+      break;
+    }
+    for (uint8_t i = 0; i < numTabs; i++) {
+      Serial.print('t');
+    }
+    Serial.print(entry.name());
+    if (entry.isDirectory()) {
+      Serial.println("/");
+      printDirectory(entry, numTabs + 1);
+    } else {
+      // files have sizes, directories do not
+      Serial.print("tt");
+      Serial.println(entry.size(), DEC);
+    }
+    entry.close();
+  }
+}
+
+
 void processCommand() {
   // Filename in lineBuffer ready for processing
   Serial.print("Input Command = ");         // for testing
   Serial.println(lineBuffer);               // for testing
-  printCharsLine (2, 0, 84, lineBuffer);    // for testing: Print buffer on LCD
-
+  printCharsLine (2, 0, 13, lineBuffer);    // for testing: Print buffer on LCD
+  readFile(lineBuffer);
   commandReady = false;                     // no more commands pending
   linePos = 0;                              // ready for next command;
+}
+
+bool readFile(char* fileName) {
+  bool ok;
+  File iFile;
+  int pos = 0;
+  /*
+    File iFile = SD.open("/");
+
+    File entry =  iFile.openNextFile();
+
+    if (entry) {
+      while (iFile.available()) {
+        dataBuffer[pos] = iFile.read();
+        pos ++;
+         Serial.println(pos);
+      }
+      dataLen = pos - 1;
+    }
+    Serial.println(dataBuffer);
+
+  */
+  ok = SD.exists(fileName);
+  if (ok) {
+    Serial.println("File exists");
+    iFile = SD.open(fileName);
+    pos = 0;
+    if (iFile) {
+      dataLen = iFile.size();
+      while (iFile.available()) {
+        dataBuffer[pos] = iFile.read();
+        pos ++;
+      }
+      dataLen = pos - 1;
+    } else {
+      Serial.println("File cannot be opened");
+    }
+  }
+  else {
+    Serial.println("SD No exists File");
+  }
+  return ok;
 }
 
 void serialEvent() {
@@ -191,7 +274,7 @@ void serialEvent() {
   }
 }
 
-void printCharsLineWrap(char* s) {
+void printCharsLineWrap(char * s) {
   // Druckt alle Zeichen von s ab Zeile 0 und beginnt ggf. eine neue Zeile
   int line = 0;                             // Zeilennummer
   int pos1 = 0;                             // erstes Zeichen der Zeile
@@ -199,7 +282,7 @@ void printCharsLineWrap(char* s) {
   // TODO: Hier fehlt noch was
 }
 
-void printCharsLine(int line, int pos1, int pos2, char* s) {
+void printCharsLine(int line, int pos1, int pos2, char * s) {
   // Druckt die Zeichen von s[pos1] bis s[pos2] in eine Zeile ab Spalte 0
   int col0 = 0;
   for (int pos = 0; (pos1 + pos <= pos2) && (s[pos1 + pos] != 0); pos++) {
