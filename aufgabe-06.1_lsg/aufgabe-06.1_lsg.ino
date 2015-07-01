@@ -122,7 +122,7 @@ const String s0 = "Hallo Welt";
 // Variables
 byte displayBuffer[84][6];                  // x = 84 cols, y = 6 banks (8 Bit each)
 const int commandLen = 80;                  // size of line buffer
-char lineBuffer[commandLen];                // input line buffer = command buffer
+char commandBuffer[commandLen];             // input line buffer = command buffer
 int linePos = 0;
 bool commandReady = false;
 const int dataSize = 1024;                  // size of data buffer
@@ -170,7 +170,6 @@ void setup() {
   clearDisplayBuffer();
 
   File file = SD.open("/");
-
   printDirectory(file, 8);
   //
 } // end setup
@@ -185,6 +184,7 @@ void loop() {
 }
 
 void printDirectory(File dir, int numTabs) {
+  // aus dem Internet kopiert
   while (true) {
     File entry =  dir.openNextFile();
     if (! entry) {
@@ -208,11 +208,11 @@ void printDirectory(File dir, int numTabs) {
 }
                                                      
 void processCommand() {
-  // Filename in lineBuffer ready for processing
+  // Filename in commandBuffer ready for processing
   Serial.print("Input Command = ");         // for testing
-  Serial.println(lineBuffer);               // for testing
-  printCharsLine (2, 0, 13, lineBuffer);    // for testing: Print buffer on LCD
-  readFile(lineBuffer);
+  Serial.println(commandBuffer);            // for testing
+  printCharsLine (2, 0, 13, commandBuffer); // for testing: Print buffer on LCD
+  readFile(commandBuffer);
   commandReady = false;                     // no more commands pending
   linePos = 0;                              // ready for next command;
 }
@@ -248,12 +248,12 @@ void serialEvent() {
   byte c;
   while (Serial.available()) {
     c = (char) Serial.read();
-    lineBuffer[linePos] = c;
+    commandBuffer[linePos] = c;
     linePos ++;                             // ready for next char
   }
   if (c == '\n') {
     commandReady = true;
-    lineBuffer[linePos] = 0;                // terminate String
+    commandBuffer[linePos] = 0;             // terminate String
   }
 }
 
@@ -285,7 +285,7 @@ int printCharColLine(int col, int line, char value) {
 }
 
 void printStringCentered(int y, String s) {
-  // Druckt den String S zentriert in einer lineBuffer
+  // Druckt den String S zentriert in einer commandBuffer
   int x0;
   int len = s.length();
   if (len > 14) {
