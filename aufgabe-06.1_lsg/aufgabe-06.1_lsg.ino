@@ -206,30 +206,56 @@ void printDirectory(File dir, int numTabs) {
     entry.close();
   }
 }
-                                                     
+
 void processCommand() {
-  // Filename in commandBuffer ready for processing
+  // fileName in commandBuffer ready for processing
   Serial.print("Input Command = ");         // for testing
   Serial.println(commandBuffer);            // for testing
+  readFile (commandBuffer);
   printCharsLine (2, 0, 13, commandBuffer); // for testing: Print buffer on LCD
-  readFile(commandBuffer);
   commandReady = false;                     // no more commands pending
   linePos = 0;                              // ready for next command;
 }
 
 bool readFile(char* fileName) {
+  int was;
+  char* finam;                              // = fileName, geht aber sonst nicht
   bool ok;
+  byte b;                                   // byte read
   File iFile;
   int pos = 0;
-  ok = SD.exists(fileName);
+  was = fileName[0] - '0';                  // 1 ... 6 
+  switch (was) { 
+    case 1:
+      finam = "text1.txt";
+      break;
+    case 2:
+      finam = "text2.txt";
+      break;
+    case 3:
+      finam = "tams.img";
+      break;
+    case 4:
+      finam = "smile1.img";
+      break;
+    case 5:
+      finam = "smile2.img";
+      break;
+    case 6:
+      finam = "smile3.img";
+      break;
+  }
+  ok = SD.exists(finam);
   if (ok) {
     Serial.println("SD: File exists");
-    iFile = SD.open(fileName);
+    iFile = SD.open(finam);
     pos = 0;
     if (iFile) {
       dataLen = iFile.size();
       while (iFile.available()) {
-        dataBuffer[pos] = iFile.read();
+        b = iFile.read();
+        dataBuffer[pos] = b;
+ //       Serial.print(b);                         // for testing
         pos ++;
       }
       dataLen = pos - 1;
@@ -239,6 +265,9 @@ bool readFile(char* fileName) {
   } else {
     Serial.println("SD: File does not exist");
   }
+  dataBuffer[pos] = '\n';
+  dataBuffer[pos + 1] = 0;
+  Serial.print(dataBuffer);
   return ok;
 }
 
@@ -251,8 +280,8 @@ void serialEvent() {
     linePos ++;                             // ready for next char
   }
   if (c == '\n') {
-    commandReady = true;
     commandBuffer[linePos] = 0;             // terminate String
+    commandReady = true;
   }
 }
 
