@@ -1,4 +1,4 @@
-// Aufgabe 6.1, Stand von 2015-06-26
+// Aufgabe 6.1, Stand von 2015-07-01
 // Lösung von Michael Hufschmidt , 6436122 , michael@hufschmidt-web.de,
 //            Tim Welge          , 6541929 , tw@ens-fiti.de
 //            Rania Wittenberg   , 6059892 , rania_wittenberg@hotmail.com
@@ -206,8 +206,7 @@ void printDirectory(File dir, int numTabs) {
     entry.close();
   }
 }
-
-
+                                                     
 void processCommand() {
   // Filename in lineBuffer ready for processing
   Serial.print("Input Command = ");         // for testing
@@ -222,22 +221,6 @@ bool readFile(char* fileName) {
   bool ok;
   File iFile;
   int pos = 0;
-  /*
-    File iFile = SD.open("/");
-
-    File entry =  iFile.openNextFile();
-
-    if (entry) {
-      while (iFile.available()) {
-        dataBuffer[pos] = iFile.read();
-        pos ++;
-         Serial.println(pos);
-      }
-      dataLen = pos - 1;
-    }
-    Serial.println(dataBuffer);
-
-  */
   ok = SD.exists(fileName);
   if (ok) {
     Serial.println("File exists");
@@ -255,7 +238,7 @@ bool readFile(char* fileName) {
     }
   }
   else {
-    Serial.println("SD No exists File");
+    Serial.println("SD File does not exist");
   }
   return ok;
 }
