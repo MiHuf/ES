@@ -158,9 +158,9 @@ void setup() {
 
   sdOK = SD.begin(pinCS1);                  // SD-Card
   if (sdOK) {
-    Serial.println("Serial Card OK");
+    Serial.println("SD: Serial Card OK");
   } else {
-    Serial.println("Serial Card NOT OK");
+    Serial.println("SD: Serial Card NOT OK");
   }
 
   clearDisplayBuffer();                     //
@@ -223,7 +223,7 @@ bool readFile(char* fileName) {
   int pos = 0;
   ok = SD.exists(fileName);
   if (ok) {
-    Serial.println("File exists");
+    Serial.println("SD: File exists");
     iFile = SD.open(fileName);
     pos = 0;
     if (iFile) {
@@ -234,11 +234,10 @@ bool readFile(char* fileName) {
       }
       dataLen = pos - 1;
     } else {
-      Serial.println("File cannot be opened");
+      Serial.println("SD: File cannot be opened");
     }
-  }
-  else {
-    Serial.println("SD File does not exist");
+  } else {
+    Serial.println("SD: File does not exist");
   }
   return ok;
 }
