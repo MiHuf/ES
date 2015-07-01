@@ -6,13 +6,16 @@
 #include <SPI.h>
 #include <SD.h>
 
+#define LCD_RESX 84
+#define LCD_RESY 48
+
 // Pin Constants
 const int pinCS0 = 10;                      // SPI: SCE Chip Select 0  <<< for LCD-Display
 const int pinCS1 = 4;                       // SPI: SCE Chip Select 1  <<< for Wireless-Shield
 // const int pinCS2 = 52;                   // SPI: SCE Chip Select 2
-const int pinDC = 5;                        // SPI: D/C = Data / Control
-const int pinRST = 6;                       // RST = Reset LCD-Display
-const int pinLcdLed = 3;                    // LED on LCD
+const int pinDC = 3;                        // SPI: D/C = Data / Control
+const int pinRST = 2;                       // RST = Reset LCD-Display
+const int pinLcdLed = 7;                    // LED on LCD
 const int pinLed = 13;                      // internal LED
 const int pinMosi = 109;                    // SPI-Block: MOSI
 const int pinMiso = 108;                    // SPI-Block: MISO
@@ -130,6 +133,8 @@ char dataBuffer[dataSize];                  // data buffer (.txt or .img)
 unsigned long dataLen;                      // aktual file size
 int dataPos = 0;
 
+uint8_t width, height;
+
 void setup() {
   // put your setup code here, to run once:
   bool sdOK = false;
@@ -156,30 +161,32 @@ void setup() {
   SPI.transfer(pinCS0, 0x20);               // basic instruction set: H = 0, V = 0
   SPI.transfer(pinCS0, 0x0C);               // set Display Mode Normal
 
+  clearDisplayBuffer();                     //
+  s0.toCharArray(dataBuffer, s0.length() + 1);
+  printCharsLine(3, 0, s0.length() - 1, dataBuffer);
+  updateDisplay();                          //
+  delay (5000);
+  clearDisplayBuffer();
+
   sdOK = SD.begin(pinCS1);                  // SD-Card
   if (sdOK) {
     Serial.println("SD: Serial Card OK");
   } else {
     Serial.println("SD: Serial Card NOT OK");
   }
-
-  clearDisplayBuffer();                     //
-  s0.toCharArray(dataBuffer, s0.length() + 1);
-  printCharsLine(3, 0, s0.length() - 1, dataBuffer);
-  updateDisplay();                          //
-  clearDisplayBuffer();
-
-  File file = SD.open("/");
-  printDirectory(file, 8);
+  // File file = SD.open("/");
+  // printDirectory(file, 8);
   //
 } // end setup
 
 void loop() {
+    clearDisplayBuffer();                     //
+    updateDisplay();
+  return;
   // put your main code here, to run repeatedly:
   if (commandReady) {
     processCommand();
     updateDisplay();
-    clearDisplayBuffer();                     //
   }
 }
 
@@ -211,10 +218,138 @@ void processCommand() {
   // fileName in commandBuffer ready for processing
   Serial.print("Input Command = ");         // for testing
   Serial.println(commandBuffer);            // for testing
-  readFile (commandBuffer);
+  // readFile (commandBuffer);
+  clearDisplayBuffer();
+  processFile(commandBuffer);
   printCharsLine (2, 0, 13, commandBuffer); // for testing: Print buffer on LCD
+  updateDisplay();
   commandReady = false;                     // no more commands pending
   linePos = 0;                              // ready for next command;
+}
+
+void processFile(char* fileName) {
+  int was;
+  int pos = 0;
+  File iFile;
+  was = fileName[0] - '0';                  // 1 ... 6
+  switch (was) {
+    case 1:
+      // finam = "text1.txt";
+
+//      iFile = SD.open("text1.txt");
+//      dataLen = iFile.size();
+//      while (iFile.available()) {
+//        dataBuffer[pos] = iFile.read();
+//        //       Serial.print(b);                         // for testing
+//        pos ++;
+//      }
+
+  clearDisplayBuffer();                     //
+  s0.toCharArray(dataBuffer, s0.length() + 1);
+  printCharsLine(3, 0, s0.length() - 1, dataBuffer);
+  updateDisplay();                          //
+
+      Serial.println(dataBuffer);
+      printStringCentered(3, dataBuffer) ;
+      break;
+    case 2:
+      //   finam = "text2.txt";
+      break;
+    case 3:
+      //   finam = "tams.img";
+      displayImage("tams.img", LCD_RESX / 2 - width / 2, LCD_RESY / 2 - height / 2);
+      break;
+    case 4:
+      //    finam = "smile1.img";
+      //       displayImage(finam, LCD_RESX / 2 - width / 2, LCD_RESY / 2 - height / 2);
+      break;
+    case 5:
+      //     finam = "smile2.img";
+      //       displayImage(finam, LCD_RESX / 2 - width / 2, LCD_RESY / 2 - height / 2);
+      break;
+    case 6:
+      //    finam = "smile3.img";
+      //       displayImage(finam, LCD_RESX / 2 - width / 2, LCD_RESY / 2 - height / 2);
+      break;
+  }
+}
+
+bool getImageDims(char *file, uint8_t &width, uint8_t &height)
+// von Eugen Richter
+{
+  bool result = false;
+  if (SD.exists(file))
+  {
+
+    File img = SD.open(file, FILE_READ);
+    if (img)
+    { Serial.println("File  found");
+
+      char dims[10] = { 0 };
+      for (uint8_t i = 0; i < 10; i++)
+      {
+        dims[i] = img.read();
+        if (dims[i] == '\n' || dims[i] == -1)
+        {
+          dims[i] = 0;
+          break;
+        }
+      }
+      if (sscanf(dims, "%d,%d", &width, &height) == 2) {
+        result = true;
+      }
+      img.close();
+    }
+  }
+  else {
+
+    Serial.println("File not found");
+  }
+  return result;
+}
+
+bool displayImage(char *file, uint8_t pX, uint8_t pY) {
+  // von Eugen Richter
+  uint8_t width, height;
+  clearDisplayBuffer();
+  if (!getImageDims(file, width, height)) {
+    return false;
+  }
+  bool result = false;
+  if (SD.exists(file))
+  {
+    File img = SD.open(file, FILE_READ);
+    if (img)
+    {
+      while (img.read() != '\n'); // Skip dimensions
+      uint16_t index = 0;
+      char ch;
+      while ((ch = img.read()) != '\n')
+      {
+        switch (ch)
+        {
+          case '0':
+            {
+              setPixel((index % width) + pX, (index / width) + pY, 0);
+              index++;
+              break;
+            }
+          case '1':
+            {
+              setPixel((index % width) + pX, (index / width) + pY, 1);
+              index++;
+              break;
+            }
+          default: {
+              break;
+            }
+        }
+      }
+      result = true;
+      img.close();
+    }
+  }
+  return result;
 }
 
 bool readFile(char* fileName) {
@@ -224,10 +359,11 @@ bool readFile(char* fileName) {
   byte b;                                   // byte read
   File iFile;
   int pos = 0;
-  was = fileName[0] - '0';                  // 1 ... 6 
-  switch (was) { 
+  was = fileName[0] - '0';                  // 1 ... 6
+  switch (was) {
     case 1:
       finam = "text1.txt";
+
       break;
     case 2:
       finam = "text2.txt";
@@ -255,7 +391,7 @@ bool readFile(char* fileName) {
       while (iFile.available()) {
         b = iFile.read();
         dataBuffer[pos] = b;
- //       Serial.print(b);                         // for testing
+        //       Serial.print(b);                         // for testing
         pos ++;
       }
       dataLen = pos - 1;
