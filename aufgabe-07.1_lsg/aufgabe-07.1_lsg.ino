@@ -1,4 +1,4 @@
-// Aufgabe 7.1, Stand von 2015-07-03
+// Aufgabe 7.1, Stand von 2015-07-07
 // Lösung von Michael Hufschmidt , 6436122 , michael@hufschmidt-web.de,
 //            Tim Welge          , 6541929 , tw@ens-fiti.de
 //            Rania Wittenberg   , 6059892 , rania_wittenberg@hotmail.com
@@ -12,23 +12,22 @@ const int pinCS1 = 4;                       // SPI: SCE Chip Select 1  <<< for W
 // Serial 3 pins are pinTX3 = 14 and pinRX3 = 15
 const int pinLed = 13;                      // internal LED
 
-const char *fileName = "RaMiTi.dat";        // Output Filename von Rania, Michael Tim
+const char *fileName = "RaMiTi.dat";        // Output Filename von Rania, Michael, Tim
 
 // Variables
 const int lineBufferLen = 512;              // size of line buffer
 char lineBuffer[lineBufferLen];             // input line buffer
-int pos = 0;                                // position within line buffer
 void setup() {
   // put your setup code here, to run once:
   bool sdOK;
-  Serial.begin(9600);
-  Serial3.begin(9600);
+  Serial.begin(9600);                       //
+  Serial3.begin(9600);                      // GPS Modul
 
   sdOK = SD.begin(pinCS1);                  // SD-Card
   if (sdOK) {
-    Serial.println("Serial Card OK");
+    Serial.println("microSD Card OK");
   } else {
-    Serial.println("Serial Card NOT OK");
+    Serial.println("Error: microsSD Card NOT OK");
   }
   //
 } // end setup
@@ -39,29 +38,40 @@ void loop() {
 
 void parseGPS() {
   // Analyse $GPGGA
-  String line = lineBuffer;
-  int commapos[14];
-  char * msg;                          //
-  uint8_t fix;                         // sattelite data valid
-  uint8_t sats = 0;                    // number of sattelites
-  uint8_t n;
-  double latitude, longitude;          // Position
-  byte checksum;
+  String line = lineBuffer;                 // lineBuffer converted to String
+  int commapos[14];                         // Position of the commas
+  int starpos;                              // Position of the *
+  double latitude, longitude;               // Geographic position
+  uint8_t fix = 0;                          // fix = sattelite data valid
+  uint8_t sats = 0;                         // number of satellites
+  char c1, c2;                              // Checksum chars
+  // byte checksum;
   if (line.substring(0, 6).equals("$GPGGA")) {
     commapos[0] = line.indexOf(",");
     for (int i = 1; i < 14; i++) {
       commapos[i] = line.indexOf(",", commapos[i - 1] + 1);
     }
-    Serial.println(lineBuffer);
+    starpos = line.indexOf("*");
+    Serial.println(lineBuffer);             // just for testing
     latitude = line.substring(commapos[1] + 1, commapos[2]).toFloat();
     longitude = line.substring(commapos[3] + 1, commapos[4]).toFloat();
-    Serial.println(latitude, 6);
-    Serial.println(longitude, 6);
+    fix = line.substring(commapos[5] + 1, commapos[6]).toInt();
+    sats = line.substring(commapos[6] + 1, commapos[7]).toInt();
+    c1 = line.charAt(starpos + 1);
+    c2 = line.charAt(starpos + 2);
+    if (check(c1, c2) && (fix > 0)) {
+      Serial.print("No fo Sats = ");
+      Serial.print(sats);
+      Serial.print(", Laenge = ");
+      Serial.print(latitude, 6);
+      Serial.print(", Breite =");
+      Serial.println(longitude, 6);
+    }
   }
 }
 
-bool check(byte checksum) {
-  // validates the checksum info
+bool check(char c1, char c2) {
+  // validates the checksum info, input are HEX values
   return true;
 }
 
@@ -71,15 +81,16 @@ void serialEvent() {
 
 void serialEvent3() {
   // GPS wants to talk
+  int pos = 0;                              // position within line buffer
   byte c;
   if (Serial3.available()) {
     c = Serial3.read();
     lineBuffer[pos] = c;
-    pos ++;                                  // ready for next char
+    pos ++;                                 // ready for next char
   }
   if (c == '\n') {
-    lineBuffer[pos] = 0;                     // terminate String
+    lineBuffer[pos] = 0;                    // terminate String
     pos = 0;
-    parseGPS();
+    parseGPS();                             // evaluate lineBuffer
   }
 }
