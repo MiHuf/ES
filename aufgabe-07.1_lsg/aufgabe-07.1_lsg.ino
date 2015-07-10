@@ -47,9 +47,9 @@ void parseGPS() {
     for (int i = 1; i < 14; i++) {
       commapos[i] = line.indexOf(",", commapos[i - 1] + 1);
     }
-    // Serial.println(lineBuffer);             // just for testing
-    latitude = line.substring(commapos[1] + 1, commapos[2]).toFloat();
-    longitude = line.substring(commapos[3] + 1, commapos[4]).toFloat();
+    // Serial.println(lineBuffer);          // just for testing
+    latitude = dataToDegrees(line.substring(commapos[1] + 1, commapos[2]));
+    longitude = dataToDegrees(line.substring(commapos[3] + 1, commapos[4]));
     fix = line.substring(commapos[5] + 1, commapos[6]).toInt();
     sats = line.substring(commapos[6] + 1, commapos[7]).toInt();
     if (check() && (fix > 0)) {
@@ -61,6 +61,15 @@ void parseGPS() {
       Serial.println(longitude, 6);
     }
   }
+}
+
+double dataToDegrees(String s) {
+  int pointpos = 0;
+  double dd, mm;
+  pointpos = s.indexOf(".");
+  mm = s.substring(pointpos-2, s.length() - 1).toFloat();
+  dd = s.substring(0, pointpos - 2).toFloat() + mm / 60.0;
+  return dd;
 }
 
 bool check() {
