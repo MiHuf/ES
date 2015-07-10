@@ -1,4 +1,4 @@
-// Aufgabe 7.1, Stand von 2015-07-08
+// Aufgabe 7.1, Stand von 2015-07-10
 // Lösung von Michael Hufschmidt , 6436122 , michael@hufschmidt-web.de,
 //            Tim Welge          , 6541929 , tw@ens-fiti.de
 //            Rania Wittenberg   , 6059892 , rania_wittenberg@hotmail.com
@@ -11,6 +11,7 @@ const int pinCS1 = 4;                       // SPI: SCE Chip Select 1  <<< for W
 // Serial 3 pins are pinTX3 = 14 and pinRX3 = 15
 const int pinLed = 13;                      // internal LED
 const char *fileName = "RaMiTi.dat";        // Output Filename von Rania, Michael, Tim
+int pos = 0;                                // position within line buffer
 
 // Variables
 const int lineBufferLen = 160;              // size of line buffer (should be <= 80)
@@ -41,13 +42,12 @@ void parseGPS() {
   double latitude, longitude;               // Geographic position
   uint8_t fix = 0;                          // fix = sattelite data valid
   uint8_t sats = 0;                         // number of satellites
-  // byte checksum;
   if (line.substring(0, 6).equals("$GPGGA")) {
     commapos[0] = line.indexOf(",");
     for (int i = 1; i < 14; i++) {
       commapos[i] = line.indexOf(",", commapos[i - 1] + 1);
     }
-    Serial.println(lineBuffer);             // just for testing
+    // Serial.println(lineBuffer);             // just for testing
     latitude = line.substring(commapos[1] + 1, commapos[2]).toFloat();
     longitude = line.substring(commapos[3] + 1, commapos[4]).toFloat();
     fix = line.substring(commapos[5] + 1, commapos[6]).toInt();
@@ -76,7 +76,6 @@ bool check() {
   c1 = lineBuffer[pos + 1];                 // high order hex value 
   c2 = lineBuffer[pos + 2];                 // low order hex value 
   checksum = (c1 <= '9' ? c1 - '0' : c1 + 10 - 'A') * 16 + (c2 <= '9' ? c2 - '0' : c2 + 10 - 'A');
-  return true;
   return checksum == coll;
 }
 
@@ -86,7 +85,6 @@ void serialEvent() {
 
 void serialEvent3() {
   // GPS wants to talk
-  int pos = 0;                              // position within line buffer
   byte c;
   if (Serial3.available()) {
     c = Serial3.read();
